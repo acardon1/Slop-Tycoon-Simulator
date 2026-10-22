@@ -18,7 +18,15 @@ local Remote = Instance.new("RemoteEvent")
 Remote.Name = "SlopEvent"
 Remote.Parent = RS
 
-local Store = DataStoreService:GetDataStore("SlopTycoonV1")
+-- GetDataStore errors when the place isn't linked to a published game (e.g. a local .rbxl in Studio).
+-- Catch it so the world still builds; Store stays nil and load/save fail safely inside their pcalls.
+local storeOk, Store = pcall(function()
+	return DataStoreService:GetDataStore("SlopTycoonV1")
+end)
+if not storeOk then
+	warn("[Slop] DataStore unavailable, saving is off: " .. tostring(Store))
+	Store = nil
+end
 
 -- Settings
 local SPEED = 10          -- studs per second
@@ -985,6 +993,7 @@ end
 local function saveData(p)
 	local s = State[p]
 	if not s or not s.Loaded or not p:FindFirstChild("leaderstats") then return false end
+	if s.Cheated then return false end   -- DevTools were used this session (see Config.DEV_BLOCK_SAVE)
 	while #s.Receipts > 100 do
 		table.remove(s.Receipts, 1)
 	end
@@ -1588,38 +1597,58 @@ local function updateAllIncome()
 	end
 end
 
+local eventRunning = false
+local EVENT_KINDS = { "AdminAbuse", "Rain", "BeltRush", "LuckyBlock" }
+
+-- Runs one server event and waits until it ends. Returns false if another event is already running.
+local function runEvent(kind)
+	if eventRunning then return false end
+	eventRunning = true
+	if kind == "AdminAbuse" then
+		adminMult = 5
+		updateAllIncome()
+		Remote:FireAllClients("banner", "ADMIN ABUSE! Income x5 for 15s", 15)
+		task.wait(15)
+		adminMult = 1
+		updateAllIncome()
+	elseif kind == "Rain" then
+		raining = true
+		beltOn = true
+		Remote:FireAllClients("banner", "RAINING BRAINROT! The belt is flooded for 10s", 10)
+		task.wait(10)
+		raining = false
+		beltOn = false
+	elseif kind == "BeltRush" then
+		beltOn = true
+		Remote:FireAllClients("banner", "BELT RUSH! Slops are rolling down the belt for 30s", 30)
+		task.wait(30)
+		beltOn = false
+	elseif kind == "LuckyBlock" then
+		for p in pairs(State) do
+			if p:FindFirstChild("leaderstats") then
+				local gift = math.max(100, math.floor(incomePerSec(p) * 60))
+				setCash(p, getCash(p) + gift)
+				notify(p, "Lucky Block! +$" .. Config.Format(gift))
+			end
+		end
+		Remote:FireAllClients("banner", "LUCKY BLOCK! Free cash for everyone", 4)
+	end
+	eventRunning = false
+	return true
+end
+
 task.spawn(function()
 	while true do
 		task.wait(math.random(45, 90))
 		local r = math.random()
 		if r < 0.3 then
-			adminMult = 5
-			updateAllIncome()
-			Remote:FireAllClients("banner", "ADMIN ABUSE! Income x5 for 15s", 15)
-			task.wait(15)
-			adminMult = 1
-			updateAllIncome()
+			runEvent("AdminAbuse")
 		elseif r < 0.55 then
-			raining = true
-			beltOn = true
-			Remote:FireAllClients("banner", "RAINING BRAINROT! The belt is flooded for 10s", 10)
-			task.wait(10)
-			raining = false
-			beltOn = false
+			runEvent("Rain")
 		elseif r < 0.8 then
-			beltOn = true
-			Remote:FireAllClients("banner", "BELT RUSH! Slops are rolling down the belt for 30s", 30)
-			task.wait(30)
-			beltOn = false
+			runEvent("BeltRush")
 		else
-			for p in pairs(State) do
-				if p:FindFirstChild("leaderstats") then
-					local gift = math.max(100, math.floor(incomePerSec(p) * 60))
-					setCash(p, getCash(p) + gift)
-					notify(p, "Lucky Block! +$" .. Config.Format(gift))
-				end
-			end
-			Remote:FireAllClients("banner", "LUCKY BLOCK! Free cash for everyone", 4)
+			runEvent("LuckyBlock")
 		end
 	end
 end)
@@ -1693,4 +1722,90 @@ MarketplaceService.ProcessReceipt = function(info)
 	table.insert(s.Receipts, info.PurchaseId)
 	saveData(p) -- persist right away; the 60s autosave retries if this fails
 	return Enum.ProductPurchaseDecision.PurchaseGranted
+end
+---------------------------------------------------------------------
+-- DevTools (cheat panel for testing, see DevClient)
+---------------------------------------------------------------------
+-- Allowed in Studio always, and in live servers only for UserIds in Config.DevUserIds.
+-- With Config.DEV_BLOCK_SAVE on, the first cheat turns off saving for that player until they rejoin.
+local DevRF = Instance.new("RemoteFunction")
+DevRF.Name = "SlopDev"
+DevRF.Parent = RS
+
+local function isDev(p)
+	return RunService:IsStudio() or table.find(Config.DevUserIds, p.UserId) ~= nil
+end
+
+local function devAmount(v)
+	v = tonumber(v)
+	if not v or v ~= v or v <= 0 or v == math.huge then return nil end
+	return math.floor(v)
+end
+
+DevRF.OnServerInvoke = function(p, action, a, b)
+	if not isDev(p) then return false end
+	if action == "check" then
+		return { BlockSave = Config.DEV_BLOCK_SAVE }
+	end
+	local s = State[p]
+	if not s or not s.Plot then return false end
+	if Config.DEV_BLOCK_SAVE then
+		s.Cheated = true
+	end
+
+	if action == "cash" then
+		local v = devAmount(a)
+		if v then
+			setCash(p, getCash(p) + v)
+			notify(p, "[DEV] +$" .. Config.Format(v))
+		end
+
+	elseif action == "tokens" then
+		local v = devAmount(a)
+		if v then
+			s.Tokens += v
+			p:SetAttribute("Tokens", s.Tokens)
+			notify(p, "[DEV] +" .. Config.Format(v) .. " tokens")
+		end
+
+	elseif action == "slop" then
+		local idx = tonumber(a)
+		if idx and Config.Mons[idx] then
+			if #s.Inventory >= Config.INV_MAX then
+				notify(p, "[DEV] Inventory full")
+			else
+				table.insert(s.Inventory, newSlop(idx, (b == true) and Config.MULT_MAX or nil))
+				discover(p, idx)
+				notify(p, "[DEV] " .. Config.Mons[idx].Name .. " added to inventory")
+			end
+		end
+
+	elseif action == "rebirth" then
+		s.Rebirths += 1
+		p.leaderstats.Rebirths.Value = s.Rebirths
+		refreshPlot(p)
+		notify(p, "[DEV] Rebirths: " .. s.Rebirths)
+
+	elseif action == "resetRebirths" then
+		s.Rebirths = 0
+		p.leaderstats.Rebirths.Value = 0
+		refreshPlot(p)
+		notify(p, "[DEV] Rebirths reset to 0")
+
+	elseif action == "cooldown" then
+		s.NextRoll = 0
+		notify(p, "[DEV] Roll cooldown cleared")
+
+	elseif action == "event" then
+		if table.find(EVENT_KINDS, a) then
+			if eventRunning then
+				notify(p, "[DEV] An event is already running")
+			else
+				task.spawn(runEvent, a)
+			end
+		end
+	end
+
+	refreshMachine(p)
+	return true
 end

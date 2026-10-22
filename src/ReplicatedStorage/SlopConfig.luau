@@ -57,6 +57,13 @@ Config.Badges = {
 	Rebirth5 = 3718036976376138,      -- 5th rebirth (unlocks the second world)
 }
 
+-- DEVTOOLS: the DEV cheat panel always shows in Studio.
+-- To use it in live servers too, add your Roblox UserId, e.g. { 12345678 }.
+Config.DevUserIds = {}
+-- true = using any cheat turns off saving for that player until they rejoin, so real saves stay clean.
+-- Set to false to keep saving while cheating (e.g. to test that cheated progress saves and loads).
+Config.DEV_BLOCK_SAVE = true
+
 Config.DATA_VERSION = 3
 Config.BUY_TO_INVENTORY = true
 Config.INV_MAX = 300             -- keeps saves small
