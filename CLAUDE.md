@@ -21,7 +21,8 @@ Roblox tycoon game (Luau) with brainrot-style "Slop" characters. The owner is no
 - **The place has no baseplate or SpawnLocation.** If `SlopServer` errors before it builds the ground, players fall into the void. Anything that can fail at startup (DataStore, MarketplaceService, etc.) must be wrapped in `pcall`.
 - `SlopConfig.luau` (ModuleScript, ReplicatedStorage): rarities, `Config.Mons`, quality tiers, slot machine (`Config.Slot`), roll settings (`Config.Wheel`, a leftover name the slot machine still uses), costs, badges, passes, products, shop items.
 - `SlopUI.luau` (ModuleScript): shared UI helpers (`corner`, `stroke`, `label`, `button`, `makeWindow`).
-- Client LocalScripts: `SlopClient` (HUD, banners, toasts, Shop UI), `MenuClient` (Inventory, Upgrades, Stats tabs), `SlotClient` (slot machine reels and buy panel), `DailyClient` (daily rewards UI), `DevClient` (DevTools cheat panel).
+- Client LocalScripts: `SlopClient` (HUD, banners, toasts, Shop UI, TP to base), `MenuClient` (Inventory, Upgrades, Stats tabs), `SlotClient` (slot machine reels and buy panel), `DailyClient` (daily rewards UI), `DevClient` (DevTools cheat panel), `PlotClient` (tank countdown bars: tag `SlopTank`, attribute `DropTime`, synced to `IncomeTick` on `SlopOverWorld`).
+- Plots are 56x60 office rooms (`buildRoom`); tanks are built in `buildTank` and rebuilt by `refreshPlot`. `SlopEvent` also carries client-to-server `"home"` (teleport to own plot).
 - Remotes: RemoteEvent `SlopEvent`; RemoteFunctions `SlopMenu`, `SlopDaily` and `SlopDev`.
 - Slops are saved as instances `{Id, Mult}`. `Config.Mons` is index-based: **only ever append new Slops at the end** or saves break.
 - Unused leftovers: `Config.ExpandCost`, and the belt's buy-straight-to-plot path (`BUY_TO_INVENTORY = true`).
@@ -105,7 +106,8 @@ Each step is tested in Studio and committed before the next starts.
   - `SlopTycoon.rbxl` is no longer tracked in git.
   - Quality tiers and the 15-level roll cooldown now match the settled rules.
   - Ran the section 1 balance math and settled the gate rules, button table and rebirth target.
-  - **Next:** start build step 1 when the owner says go.
+  - Build step 1 done and tested: office rooms with neon-pipe ceiling, 4x4 tanks with floating Slops, screens with drop value and countdown, Sell prompts on tanks, TP to base, DevTools "Max Slop Spots".
+  - **Next:** build step 2 (factory + ATM) when the owner says go.
 
 ## Badges
 

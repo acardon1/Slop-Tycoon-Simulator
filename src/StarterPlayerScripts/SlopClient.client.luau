@@ -192,6 +192,22 @@ shopButton.TextColor3 = Color3.new(1, 1, 1)
 shopButton.Parent = gui
 style(shopButton)
 
+-- Quick TP: asks the server to move you to your own plot
+local homeButton = Instance.new("TextButton")
+homeButton.AnchorPoint = Vector2.new(0, 1)
+homeButton.Position = UDim2.new(0, 154, 1, -12)
+homeButton.Size = UDim2.fromOffset(130, 48)
+homeButton.BackgroundColor3 = Color3.fromRGB(59, 143, 224)
+homeButton.Text = "🏠 BASE"
+homeButton.Font = Enum.Font.FredokaOne
+homeButton.TextScaled = true
+homeButton.TextColor3 = Color3.new(1, 1, 1)
+homeButton.Parent = gui
+style(homeButton)
+homeButton.Activated:Connect(function()
+	Remote:FireServer("home")
+end)
+
 local shop = Instance.new("Frame")
 shop.AnchorPoint = Vector2.new(0.5, 0.5)
 shop.Position = UDim2.fromScale(0.5, 0.5)

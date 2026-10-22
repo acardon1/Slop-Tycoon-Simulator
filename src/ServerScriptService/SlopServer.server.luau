@@ -10,6 +10,7 @@ local Workspace = game:GetService("Workspace")
 local MarketplaceService = game:GetService("MarketplaceService")
 local ServerStorage = game:GetService("ServerStorage")
 local BadgeService = game:GetService("BadgeService")
+local CollectionService = game:GetService("CollectionService")
 
 
 local Config = require(RS:WaitForChild("SlopConfig"))
@@ -35,8 +36,8 @@ local MAX_SLOTS = 16
 local NUM_PLOTS = 8
 
 -- Layout Settings
-local PLOT_W = 40         -- plot width; size along the belt (x)
-local PLOT_D = 50         -- plot depth; size away from the belt (z)
+local PLOT_W = 56         -- plot width; size along the belt (x)
+local PLOT_D = 60         -- plot depth; size away from the belt (z)
 local PLOT_GAP = 40       -- empty grass between neighboring plots
 local PLAZA = 14          -- curb + sidewalk depth between belt and plot
 local CURB_W = 1
@@ -48,6 +49,15 @@ local PLOT_CZ = BELT_W / 2 + PLAZA + PLOT_D / 2                 -- plot center d
 local PLOTS_HALF_LEN = (PER_SIDE * PLOT_PITCH - PLOT_GAP) / 2   -- 110
 local PLOTS_HALF_WIDTH = PLOT_CZ + PLOT_D / 2                   -- 58
 local BELT_HALF = PLOTS_HALF_LEN                                -- belt now spans every plot
+
+-- Office room on each plot (closed top) and its 4x4 grid of Slop tanks
+local ROOM_H = 16         -- floor to ceiling
+local CEIL_Y = 0.5 + ROOM_H   -- the floor's top is at y 0.5
+local DOOR_W, DOOR_H = 16, 11 -- doorway in the front wall, toward the belt
+local TANK_PITCH = 10     -- studs between tank centres
+local TANK_W = 6          -- glass footprint
+local TANK_BASE_H = 3     -- console under the glass; its front holds the screen
+local TANK_GLASS_H = 8
 
 
 -- State
@@ -298,11 +308,15 @@ local function makeMon(idx, kind, sub, subColor)
 	return root
 end
 
--- Small stand-in for a Slop (its model, or a cube) shown in front of a reel
-local function buildDisplay(idx, height)
+-- Label-free Slop (its model, or a cube): offers in front of the reels and Slops in tanks.
+-- useModel = false forces the cube; nil follows Config.Slot.OfferModels.
+local function buildDisplay(idx, height, useModel)
 	local m = Config.Mons[idx]
 	local r = Config.Rarities[m.Rarity]
-	local template = Config.Slot.OfferModels and m.Model and getTemplate(m.Model)
+	if useModel == nil then
+		useModel = Config.Slot.OfferModels
+	end
+	local template = useModel and m.Model and getTemplate(m.Model)
 	local root
 	if template then
 		root = template:Clone()
@@ -473,10 +487,65 @@ end
 ---------------------------------------------------------------------
 local plots = {}
 
-local function padPos(plot, k)
+-- Floor-level centre of tank k (1-16). Row 1 is nearest the door, column 1 nearest the Slop Machine.
+-- The grid is shifted 4 studs toward +X to leave a walkway beside the machine's offers.
+local function tankPos(plot, k)
 	local col = (k - 1) % 4
 	local row = math.floor((k - 1) / 4)
-	return Vector3.new(plot.CX - 13.5 + col * 9, 0.6, plot.CZ - 13.5 + row * 9)
+	return Vector3.new(plot.CX + 4 + (col - 1.5) * TANK_PITCH, 0.5, plot.CZ - plot.Side * (1.5 - row) * TANK_PITCH)
+end
+
+-- Office room: walls all round (doorway in the front, toward the belt) and a closed ceiling
+-- with neon pipes. The -X wall stands just behind the Slop Machine, so the machine is inside.
+local function buildRoom(plot)
+	local room = Instance.new("Folder")
+	room.Name = "Room"
+	room.Parent = plot.Folder
+
+	local wallColor = Color3.fromRGB(226, 224, 216)
+	local x0 = plot.CX - PLOT_W / 2 - 5.5      -- -X wall, behind the machine's pedestal
+	local x1 = plot.CX + PLOT_W / 2            -- +X wall
+	local lenX = x1 - x0 + 1                   -- front/back walls and ceiling cover both side walls
+	local midX = (x0 + x1) / 2
+	local frontZ = plot.CZ - plot.Side * PLOT_D / 2
+	local backZ = plot.CZ + plot.Side * PLOT_D / 2
+
+	mk("WallBack", Vector3.new(lenX, CEIL_Y, 1), CFrame.new(midX, CEIL_Y / 2, backZ), wallColor, room)
+	mk("WallSide", Vector3.new(1, CEIL_Y, PLOT_D), CFrame.new(x1, CEIL_Y / 2, plot.CZ), wallColor, room)
+	mk("WallSide", Vector3.new(1, CEIL_Y, PLOT_D), CFrame.new(x0, CEIL_Y / 2, plot.CZ), wallColor, room)
+
+	-- front wall: a piece each side of the doorway, plus the strip above it
+	local doorL, doorR = plot.CX - DOOR_W / 2, plot.CX + DOOR_W / 2
+	local leftLen, rightLen = doorL - (x0 - 0.5), (x1 + 0.5) - doorR
+	mk("WallFront", Vector3.new(leftLen, CEIL_Y, 1), CFrame.new(doorL - leftLen / 2, CEIL_Y / 2, frontZ), wallColor, room)
+	mk("WallFront", Vector3.new(rightLen, CEIL_Y, 1), CFrame.new(doorR + rightLen / 2, CEIL_Y / 2, frontZ), wallColor, room)
+	local headerBottom = 0.5 + DOOR_H
+	mk("DoorHeader", Vector3.new(DOOR_W, CEIL_Y - headerBottom, 1),
+		CFrame.new(plot.CX, (headerBottom + CEIL_Y) / 2, frontZ), wallColor, room)
+
+	local ceiling = mk("Ceiling", Vector3.new(lenX, 1, PLOT_D + 1), CFrame.new(midX, CEIL_Y + 0.5, plot.CZ), Color3.fromRGB(52, 55, 64), room)
+	local light = Instance.new("SurfaceLight")
+	light.Face = Enum.NormalId.Bottom
+	light.Range = 22
+	light.Brightness = 1.5
+	light.Color = Color3.fromRGB(255, 244, 228)
+	light.Parent = ceiling
+
+	-- neon pipes under the ceiling: three along the room, two across
+	for _, f in ipairs({ -0.3, 0, 0.3 }) do
+		local pipe = mk("NeonPipe", Vector3.new(PLOT_W - 2, 0.8, 0.8),
+			CFrame.new(plot.CX, CEIL_Y - 0.6, plot.CZ + f * PLOT_D), Color3.fromRGB(57, 255, 120), room)
+		pipe.Shape = Enum.PartType.Cylinder
+		pipe.Material = Enum.Material.Neon
+		pipe.CanCollide = false
+	end
+	for _, f in ipairs({ -0.25, 0.25 }) do
+		local pipe = mk("NeonPipe", Vector3.new(PLOT_D - 2, 0.6, 0.6),
+			CFrame.new(plot.CX + f * PLOT_W, CEIL_Y - 1.4, plot.CZ) * CFrame.Angles(0, math.rad(90), 0), Color3.fromRGB(255, 80, 200), room)
+		pipe.Shape = Enum.PartType.Cylinder
+		pipe.Material = Enum.Material.Neon
+		pipe.CanCollide = false
+	end
 end
 
 local function mkBlock(plot, name, dx, color, text)
@@ -622,23 +691,18 @@ for i = 1, NUM_PLOTS do
 		Spawn = CFrame.lookAt(Vector3.new(cx, 4, cz - side * (PLOT_D / 2 - 4)), Vector3.new(cx, 4, 0)),
 	}
 
-	local plotPlate = mk("Base", Vector3.new(PLOT_W, 0.4, PLOT_D), CFrame.new(cx, 0.3, cz), Color3.fromRGB(74, 143, 57), folder)
-	plotPlate.Material = Enum.Material.Plastic
-	plotPlate.TopSurface = Enum.SurfaceType.Studs
+	-- office floor; the plate also runs under the Slop Machine on the -X side
+	local plotPlate = mk("Base", Vector3.new(PLOT_W + 5, 0.4, PLOT_D), CFrame.new(cx - 2.5, 0.3, cz), Color3.fromRGB(72, 78, 92), folder)
+	plotPlate.Material = Enum.Material.Fabric
 
-	-- fences on the back and sides (front stays open toward the belt)
-	local fence = Color3.fromRGB(120, 85, 50)
-	local fenceBack = mk("FenceBack", Vector3.new(PLOT_W, 3, 1), CFrame.new(cx, 1.6, cz + side * PLOT_D / 2), fence, folder)
-	fenceBack.Material = Enum.Material.Wood
-	local fenceRight = mk("FenceR", Vector3.new(1, 3, PLOT_D), CFrame.new(cx + PLOT_W / 2, 1.6, cz), fence, folder)
-	fenceRight.Material = Enum.Material.Wood
+	buildRoom(plot)
 	local dynamic = Instance.new("Folder")
 	dynamic.Name = "Dynamic"
 	dynamic.Parent = folder
 	plot.Dynamic = dynamic
 
-	-- owner label
-	local lp = mk("OwnerPart", Vector3.new(1, 1, 1), CFrame.new(cx, 10, cz), Color3.new(1, 1, 1), folder)
+	-- owner label, floating above the roof
+	local lp = mk("OwnerPart", Vector3.new(1, 1, 1), CFrame.new(cx, CEIL_Y + 6, cz), Color3.new(1, 1, 1), folder)
 	lp.Transparency = 1
 	lp.CanCollide = false
 	local lg = Instance.new("BillboardGui")
@@ -721,31 +785,109 @@ local function sell(p, k)
 	notify(p, "Sold " .. mon.Name .. " for $" .. Config.Format(v))
 end
 
+-- shrinks a Slop (never grows it) until it fits a box maxW wide and maxH tall
+local function fitInside(root, maxW, maxH)
+	local _, size = boundsOf(root)
+	local f = math.min(1, maxW / size.X, maxW / size.Z, maxH / size.Y)
+	if f < 1 then
+		scaleTo(root, size.Y * f)
+	end
+end
+
+-- One see-through tank for Slop Spot k. sl = the equipped Slop, or nil for an empty spot.
+-- The screen shows the Slop's next cash drop; PlotClient animates the countdown bar
+-- (tag "SlopTank", attribute DropTime, synced to SlopOverWorld's "IncomeTick").
+local function buildTank(p, plot, k, sl, mult)
+	local pos = tankPos(plot, k)
+	local front = Vector3.new(0, 0, -plot.Side)       -- toward the door
+	local metal = Color3.fromRGB(58, 62, 74)
+	local up = function(y) return pos + Vector3.new(0, y, 0) end
+
+	local tank = Instance.new("Model")
+	tank.Name = "Tank" .. k
+	tank.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
+
+	local outer = TANK_W + 0.4
+	mk("Base", Vector3.new(outer, TANK_BASE_H, outer), CFrame.new(up(TANK_BASE_H / 2)), metal, tank)
+	local rim = mk("Rim", Vector3.new(outer + 0.1, 0.2, outer + 0.1), CFrame.new(up(TANK_BASE_H + 0.1)), Color3.fromRGB(57, 255, 120), tank)
+	rim.Material = Enum.Material.Neon
+	local glass = mk("Glass", Vector3.new(TANK_W, TANK_GLASS_H, TANK_W), CFrame.new(up(TANK_BASE_H + TANK_GLASS_H / 2)), Color3.fromRGB(170, 230, 255), tank)
+	glass.Material = Enum.Material.Glass
+	glass.Transparency = 0.75
+	mk("Cap", Vector3.new(outer, 0.6, outer), CFrame.new(up(TANK_BASE_H + TANK_GLASS_H + 0.3)), metal, tank)
+
+	local screenPos = up(TANK_BASE_H / 2) + front * (outer / 2 + 0.1)
+	local screen = mk("Screen", Vector3.new(TANK_W - 0.6, TANK_BASE_H - 0.8, 0.2), CFrame.lookAt(screenPos, screenPos + front), Color3.fromRGB(18, 20, 26), tank)
+	local sg = Instance.new("SurfaceGui")
+	sg.Name = "Gui"
+	sg.Face = Enum.NormalId.Front
+	sg.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	sg.PixelsPerStud = 50
+	sg.LightInfluence = 0
+	sg.MaxDistance = 80
+	sg.Parent = screen
+
+	if sl then
+		local m = Config.Mons[sl.Id]
+		local tier = Config.MultTier(sl.Mult)
+
+		local root = buildDisplay(sl.Id, m.ModelHeight or 4, true)
+		fitInside(root, TANK_W - 1.2, TANK_GLASS_H - 1.5)
+		local cf = boundsOf(root)
+		root:PivotTo(root:GetPivot() + (glass.Position - cf.Position))   -- floats in the middle of the glass
+		root.Parent = tank
+
+		textLabel(sg, m.Name, 0.04, 0.3, Config.Rarities[m.Rarity].Color)
+		local drop = textLabel(sg, string.format('+$%s  <font color="#%s">%s</font>',
+			Config.Format(slopIncome(sl) * mult), tier.Color:ToHex(), tier.Name), 0.34, 0.28, Color3.fromRGB(110, 255, 150))
+		drop.RichText = true
+
+		local bar = Instance.new("Frame")
+		bar.Name = "Bar"
+		bar.Position = UDim2.fromScale(0.06, 0.67)
+		bar.Size = UDim2.fromScale(0.88, 0.27)
+		bar.BackgroundColor3 = Color3.fromRGB(40, 44, 54)
+		bar.BorderSizePixel = 0
+		bar.Parent = sg
+		local fill = Instance.new("Frame")
+		fill.Name = "Fill"
+		fill.Size = UDim2.fromScale(0, 1)
+		fill.BackgroundColor3 = Color3.fromRGB(56, 193, 114)
+		fill.BorderSizePixel = 0
+		fill.Parent = bar
+		local timer = textLabel(bar, "Next drop", 0, 1)
+		timer.Name = "Timer"
+		timer.ZIndex = 2
+
+		tank:SetAttribute("DropTime", m.DropTime)
+
+		local pp = mkPrompt(glass, "Sell for $" .. Config.Format(math.floor(m.Price / 2)), m.Name, 0.3)
+		pp.MaxActivationDistance = 8
+		pp.Triggered:Connect(function(who)
+			if who == p then
+				sell(p, k)
+			end
+		end)
+	else
+		textLabel(sg, "EMPTY SPOT", 0.1, 0.42, Color3.fromRGB(150, 155, 165))
+		textLabel(sg, "Equip a Slop from your inventory", 0.58, 0.28, Color3.fromRGB(200, 205, 215))
+	end
+
+	CollectionService:AddTag(tank, "SlopTank")
+	tank.Parent = plot.Dynamic
+end
+
 function refreshPlot(p)
 	local s = State[p]
 	if not s or not s.Plot then return end
 	local plot = s.Plot
 	plot.Dynamic:ClearAllChildren()
 
+	-- one tank per unlocked Slop Spot; locked spots show nothing
 	local mult = totalMult(p) / adminMult
 	for k = 1, s.Slots do
-		local pos = padPos(plot, k)
-		mk("Pad", Vector3.new(3.8, 0.2, 3.8), CFrame.new(pos), Color3.fromRGB(40, 90, 36), plot.Dynamic)
-
 		local sl = s.Owned[k]
-		if sl and sl ~= 0 then
-			local m = Config.Mons[sl.Id]
-			local part = makeMon(sl.Id, "plot", "+$" .. Config.Format(slopIncome(sl) * mult) .. "/s", Config.MultTier(sl.Mult).Color)		
-			part.Parent = plot.Dynamic
-			placeAt(part, pos + Vector3.new(0, 1.6, 0))
-			local pp = mkPrompt(primaryOf(part), "Sell for $" .. Config.Format(math.floor(m.Price / 2)), m.Name, 0.3)
-			pp.MaxActivationDistance = 10
-			pp.Triggered:Connect(function(who)
-				if who == p then
-					sell(p, k)
-				end
-			end)
-		end
+		buildTank(p, plot, k, (sl and sl ~= 0) and sl or nil, mult)
 	end
 
 	plot.RebirthPrompt.ObjectText = "$" .. Config.Format(Config.RebirthCost(s.Rebirths)) .. " for x" .. string.format("%.2f", Config.Mult(s.Rebirths + 1))
@@ -1479,6 +1621,17 @@ local function teleport(p)
 	end
 end
 
+-- HUD "BASE" button (SlopClient). The server does the move, so it only ever goes to your own plot.
+local lastHome = {}   -- [player] = os.clock() of the last teleport
+Remote.OnServerEvent:Connect(function(p, action)
+	if action == "home" then
+		local now = os.clock()
+		if now - (lastHome[p] or 0) < 1 then return end
+		lastHome[p] = now
+		teleport(p)
+	end
+end)
+
 local function onJoin(p)
 	local s, cash = loadData(p)
 	State[p] = s
@@ -1537,6 +1690,7 @@ local function onLeave(p)
 	end
 	State[p] = nil
 	badgeSeen[p] = nil
+	lastHome[p] = nil
 end
 
 Players.PlayerAdded:Connect(onJoin)
@@ -1566,6 +1720,8 @@ end)
 task.spawn(function()
 	while true do
 		task.wait(1)
+		-- tank countdown bars (PlotClient) restart from this shared server time
+		world1:SetAttribute("IncomeTick", Workspace:GetServerTimeNow())
 		for p, s in pairs(State) do
 			if p.Parent and p:FindFirstChild("leaderstats") then
 				if s.BoostUntil > 0 and s.BoostUntil <= os.time() then
@@ -1793,6 +1949,15 @@ DevRF.OnServerInvoke = function(p, action, a, b)
 		p.leaderstats.Rebirths.Value = 0
 		refreshPlot(p)
 		notify(p, "[DEV] Rebirths reset to 0")
+
+	elseif action == "maxSlots" then
+		-- every Slop Spot unlocked, so all 16 tanks can be checked; "resetUpgrades" undoes it
+		while s.Slots < MAX_SLOTS do
+			s.Slots += 1
+			table.insert(s.Owned, 0)
+		end
+		refreshPlot(p)
+		notify(p, "[DEV] All " .. MAX_SLOTS .. " Slop Spots unlocked")
 
 	elseif action == "cooldown" then
 		s.NextRoll = 0

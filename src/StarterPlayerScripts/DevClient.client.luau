@@ -142,6 +142,7 @@ row({
 	{ "No cooldown", ORANGE, function() call("cooldown") end },
 })
 row({
+	{ "Max Slop Spots", BLUE, function() call("maxSlots") end },
 	{ "Reset all upgrades", COL.Red, function() call("resetUpgrades") end },
 })
 
