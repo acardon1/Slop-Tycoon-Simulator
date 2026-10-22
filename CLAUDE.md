@@ -85,12 +85,13 @@ Each rule is tagged **(built)** or **(not built yet)**. When it is not built, th
 - **Rebirth and the factory (decided):** rebirth resets all factory buttons. Maxing the factory is **not** required to rebirth.
 - **First rebirth cost (decided): about $1M** (5 min at ~$3,120/s with 4 average Epic Slops and a maxed section 1), still x3 per rebirth. Change `Config.RebirthCost` in build step 3 together with the buttons, not before (without the factory it would make rebirth too slow).
 - Balance math method: simulate a player buying each button as soon as they can afford it, and tune the first cost so the 10th button lands at 15 min.
+- **Open pacing decision (undecided):** the first life is about 20 minutes now (15 min to max the factory + 5 min to the first rebirth). The owner may want about 30 minutes, with costs scaled up to match. **Do not change any numbers** (button costs, `Config.RebirthCost`, the balance target) until the owner decides.
 
 ## Plot rebuild build order
 
 Each step is tested in Studio and committed before the next starts.
 
-1. **Office room + tanks:** closed-top room with neon-pipe ceiling, 4x4 see-through tanks with Slops floating inside, and each tank showing its next drop and countdown. Income still goes straight to the wallet. On-plot Sell prompts move onto the tanks.
+1. **Office room + tanks:** closed-top room with neon-pipe ceiling, 4x4 see-through tanks with Slops floating inside, and each tank showing its next drop and countdown. Income still goes straight to the wallet. On-plot Sell prompts move onto the tanks. Quick TP-to-plot button on the HUD (the server moves the character).
 2. **Factory + ATM:** conveyor beyond the back wall, client-drawn "[SLOP]" drop boxes (capped count), ATM on the back wall, Collect pad, CASH TO COLLECT HUD. Income moves to the ATM.
 3. **Buttons + gates:** the section 1 table above, rebirth resets buttons, `Config.RebirthCost` to ~$1M, DevTools buttons to buy and reset factory buttons (add to `resetUpgrades`).
 4. **Finish:** Rebirth and 2x boost/pass applied at the ATM with their lines, admin x5 at drop time, 4 starting slots with `DATA_VERSION` 4 and the save upgrade.
@@ -105,12 +106,22 @@ Each step is tested in Studio and committed before the next starts.
   - Quality tiers and the 15-level roll cooldown now match the settled rules.
   - Ran the section 1 balance math and settled the gate rules, button table and rebirth target.
   - **Next:** start build step 1 when the owner says go.
-- Token prices should keep players spending tokens until roughly rebirth 20, and be very expensive.
 
 ## Badges
 
 - Live and wired in code: Welcome, FirstExpand, FirstSlop, Legendary, FirstRebirth, Mythic, Secret, MaxedSpots, FullPlot, Rebirth5 (IDs in `Config.Badges`).
 - ATM lump ladder: one big collect awards every badge at or below its size at once. Needs **10** badges: $100, $1K, $10K, $100K, $1M, $10M, $1B, $1T, plus quadrillion and quintillion. **(not built yet; no badges created)** Badge creation is limited to five a day.
+
+## Ideas from another tycoon
+
+None of these are built yet.
+
+- **Quick TP to plot:** a HUD button that teleports the player to their own plot. The server moves the character (not the client). Part of build step 1.
+- **Quests:** 3 daily and 3 weekly quests, reset on UTC like daily rewards, shown in a new Quests tab.
+- **Achievements:** for Slops rolled, Slops bought, boxes produced, daily quests completed and weekly quests completed.
+- **Codes:** redeemable codes.
+- **Rebirth perks tab:** perks bought after rebirthing. Candidates: higher drop value, cheaper factory buttons, start a rebirth with some buttons already owned, 10 min of 2x cash after rebirth, faster drops, walk speed, bonus tokens, and later offline earnings.
+- **Parked:** mini obbys and gear.
 
 ## Later phases and owner notes
 
@@ -118,6 +129,7 @@ Each step is tested in Studio and committed before the next starts.
 - Map spawns are a small version of the Slop, about half stuck in the ground. When modifiers exist, map-spawned Slops get an exclusive tag such as "Stranded" or "Lone Wolf", and if they spawn during an event or weather that gives a modifier (the `Type` field in the code), they also carry that modifier.
 - Modifiers (`Type` is the placeholder name): rolled or bought during events or weather, each with a set effect (e.g. "Golden": about +20% cash drop). Comes after Phase 4.
 - Wide Noob: bald, faceless politician-lookalike Secret Slop, Phase 4. Mythic joins the Day 7 daily pool after first claim (Phase 4). Daily Drip Dino is the first-claim Day 7 reward (Special rarity).
+- Token prices should keep players spending tokens until roughly rebirth 20, and be very expensive.
 - Custom models for every Slop. A new tier directly above Legendary, crafted from 3 Perfect Epic Slops (name TBD). More Slops below Legendary.
 - World2/World3 (commented out in `SlopServer`) are not planned; the commented code can be removed. The Rebirth5 badge comment ("unlocks the second world") is out of date.
 - Idea (undecided): unsecured cash that other players can steal if they pay Robux or sneak into the factory, with security upgrades and a "JAILBREAK" event.
