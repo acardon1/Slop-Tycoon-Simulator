@@ -71,13 +71,14 @@ end
 player:GetAttributeChangedSignal("Tokens"):Connect(refresh)
 refresh()
 
--- Quick TP: round headshot left of the HUD. Tapping it (or the "TP TO BASE" pop-up that
--- shows when you are far from your plot) asks the server to move you to your own plot.
+-- Quick TP: round headshot right of the HUD, centred on its height. Tapping it, the
+-- "TP TO BASE" pop-up beside it (shows when you are far from your plot), or the BASE
+-- button (bottom left) asks the server to move you to your own plot.
 local FAR_FROM_BASE = 60   -- studs from the plot centre before the pop-up shows
 
 local head = Instance.new("ImageButton")
-head.AnchorPoint = Vector2.new(1, 0)
-head.Position = UDim2.new(0.5, -133, 0, 12)
+head.AnchorPoint = Vector2.new(0, 0.5)
+head.Position = UDim2.new(0.5, 133, 0, 76)   -- HUD spans x -125..125 and y 12..140
 head.Size = UDim2.fromOffset(72, 72)
 head.BackgroundColor3 = Color3.fromRGB(20, 22, 28)
 head.BackgroundTransparency = 0.15
@@ -95,8 +96,8 @@ task.spawn(function()
 end)
 
 local tpPopup = Instance.new("TextButton")
-tpPopup.AnchorPoint = Vector2.new(0.5, 0)
-tpPopup.Position = UDim2.new(0.5, -169, 0, 90)
+tpPopup.AnchorPoint = Vector2.new(0, 0.5)
+tpPopup.Position = UDim2.new(0.5, 213, 0, 76)   -- just right of the headshot, clear of the HUD
 tpPopup.Size = UDim2.fromOffset(120, 30)
 tpPopup.BackgroundColor3 = Color3.fromRGB(56, 193, 114)
 tpPopup.Text = "TP TO BASE"
@@ -112,6 +113,19 @@ local function goHome()
 end
 head.Activated:Connect(goHome)
 tpPopup.Activated:Connect(goHome)
+
+local homeButton = Instance.new("TextButton")
+homeButton.AnchorPoint = Vector2.new(0, 1)
+homeButton.Position = UDim2.new(0, 154, 1, -12)   -- right of SHOP
+homeButton.Size = UDim2.fromOffset(130, 48)
+homeButton.BackgroundColor3 = Color3.fromRGB(59, 143, 224)
+homeButton.Text = "🏠 BASE"
+homeButton.Font = Enum.Font.FredokaOne
+homeButton.TextScaled = true
+homeButton.TextColor3 = Color3.new(1, 1, 1)
+homeButton.Parent = gui
+style(homeButton)
+homeButton.Activated:Connect(goHome)
 
 task.spawn(function()
 	while true do
