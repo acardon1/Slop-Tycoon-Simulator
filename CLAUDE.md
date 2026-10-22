@@ -22,7 +22,7 @@ Roblox tycoon game (Luau) with brainrot-style "Slop" characters. The owner is no
 - `SlopConfig.luau` (ModuleScript, ReplicatedStorage): rarities, `Config.Mons`, quality tiers, slot machine (`Config.Slot`), roll settings (`Config.Wheel`, a leftover name the slot machine still uses), costs, badges, passes, products, shop items.
 - `SlopUI.luau` (ModuleScript): shared UI helpers (`corner`, `stroke`, `label`, `button`, `makeWindow`).
 - Client LocalScripts: `SlopClient` (HUD, banners, toasts, Shop UI, TP to base), `MenuClient` (Inventory, Upgrades, Stats tabs), `SlotClient` (slot machine reels and buy panel), `DailyClient` (daily rewards UI), `DevClient` (DevTools cheat panel), `PlotClient` (tank countdown bars: tag `SlopTank`, attribute `DropTime`, synced to `IncomeTick` on `SlopOverWorld`).
-- Plots are 56x60 office rooms (`buildRoom`); tanks are built in `buildTank` and rebuilt by `refreshPlot`. `SlopEvent` also carries client-to-server `"home"` (teleport to own plot).
+- Plots are 56x60 office rooms (`buildRoom`) with a 44-deep factory yard behind (`buildFactory`: Boxer, conveyor, ATM, Collect pad; conveyor path in plot folder attributes `Path1..PathN`). Tanks are built in `buildTank` and rebuilt by `refreshPlot`. `SlopEvent` also carries client-to-server `"home"` (teleport to own plot) and server-to-client `"drops"` and `"collect"`.
 - Remotes: RemoteEvent `SlopEvent`; RemoteFunctions `SlopMenu`, `SlopDaily` and `SlopDev`.
 - Slops are saved as instances `{Id, Mult}`. `Config.Mons` is index-based: **only ever append new Slops at the end** or saves break.
 - Unused leftovers: `Config.ExpandCost`, and the belt's buy-straight-to-plot path (`BUY_TO_INVENTORY = true`).
@@ -30,7 +30,7 @@ Roblox tycoon game (Luau) with brainrot-style "Slop" characters. The owner is no
 
 ## Current features (keep)
 
-- Income: right now every equipped Slop pays straight into the wallet every second (the factory/ATM replaces this in the plot rebuild).
+- Income: every equipped Slop drops a box every second; the cash reaches the ATM when the box does (server timer, `Pending`), and the player collects it on the Collect pad. Slaps still pay straight to the wallet.
 - Slap block on each plot gives a small cash slap; the AutoSlap game pass slaps every second.
 - Belt events every 45-90s: Admin Abuse (income x5 for 15s), Raining Brainrot (flooded belt 10s), Belt Rush (belt runs 30s), Lucky Block (free cash). The belt only runs during events.
 - Shop UI (SHOP button) lists `Config.ShopItems`.
@@ -50,7 +50,7 @@ Each rule is tagged **(built)** or **(not built yet)**. When it is not built, th
 - Reels show odds as "1 in X". **(not built yet: reels show emoji)**
 - Bought Slops go to inventory first **(built)** and auto-equip if a slot is open. **(not built yet)**
 - Rebirth resets inventory and placed Slops. **(built)** Tokens come from rebirthing: 0.002% of cash earned that rebirth minus the rebirth cost, soft cap. **(not built yet: code is 0.002% of cash earned, no minus, no cap)** Token rework is delayed until after the plot rebuild.
-- Cash from the factory is collected at the ATM on a large green Collect pad (no cooldown, works on mobile and console). ATM cash is uncapped. HUD shows CASH TO COLLECT. **(not built yet)**
+- Cash from the factory is collected at the ATM on a large green Collect pad (no cooldown, works on mobile and console). ATM cash is uncapped. HUD shows CASH TO COLLECT. **(built)**
 - Multipliers: the Rebirth boost and 2x boost are NOT applied on the belt. They apply at ATM collection and show below the total as "Rebirth boost: +$X" and "2x Cash: +$X" lines. The 2x Cash game pass applies at the ATM and only the final amount is doubled, no separate line. The 2x boost no longer doubles wallet cash. The admin x5 event applies at drop time. **(not built yet: today the pass, boost, rebirth and admin x5 all multiply income per second, and the pass also doubles slaps)**
 - Products: `Config.Products.DoubleOffline` is set (50 Robux double-offline product), but offline rewards are not built yet, so it only sets a flag. A larger double-offline game pass is decided in Phase 4.
 
@@ -107,7 +107,10 @@ Each step is tested in Studio and committed before the next starts.
   - Quality tiers and the 15-level roll cooldown now match the settled rules.
   - Ran the section 1 balance math and settled the gate rules, button table and rebirth target.
   - Build step 1 done and tested: office rooms with neon-pipe ceiling, 4x4 tanks with floating Slops, screens with drop value and countdown, Sell prompts on tanks, TP to base, DevTools "Max Slop Spots".
-  - **Next:** build step 2 (factory + ATM) when the owner says go.
+  - HUD: headshot right of the cash panel (not clickable yet), BASE pop-up under the panel when far from the plot, BASE button bottom left.
+  - Build step 2 done and tested: open-top factory yard behind each room (back doorway), Slop Boxer, conveyor, client-drawn "[SLOP]" boxes (`PlotClient`, max 4 per plot per drop, merged), ATM in the back wall with formula screen, Collect pad (stand to collect, outline dim/white/gold), CASH TO COLLECT HUD line, ATM cash saved (`AtmCash`), DevTools ATM buttons. Slap/rebirth blocks moved beside the front door. Rebirth empties the ATM; stats count cash when collected.
+  - **Open issue (next session):** with 4 Slops the conveyor looks like one long box. Cause: every Slop drops every 1s (`DropTime` 1), so 4 boxes/s at 6 studs/s puts them 1.5 studs apart, smaller than the 2-stud box. Options to decide: longer `DropTime` per Slop with bigger drops (same $/s), fewer boxes per drop (`MAX_PER_TICK` in `PlotClient`), faster belt (`DROP_SPEED`), smaller boxes.
+  - **Next:** fix drop density, then build step 3 (buttons + gates).
 
 ## Badges
 
@@ -131,6 +134,7 @@ None of these are built yet.
 - Map spawns are a small version of the Slop, about half stuck in the ground. When modifiers exist, map-spawned Slops get an exclusive tag such as "Stranded" or "Lone Wolf", and if they spawn during an event or weather that gives a modifier (the `Type` field in the code), they also carry that modifier.
 - Modifiers (`Type` is the placeholder name): rolled or bought during events or weather, each with a set effect (e.g. "Golden": about +20% cash drop). Comes after Phase 4.
 - Wide Noob: bald, faceless politician-lookalike Secret Slop, Phase 4. Mythic joins the Day 7 daily pool after first claim (Phase 4). Daily Drip Dino is the first-claim Day 7 reward (Special rarity).
+- Rebirth will move from the block by the front door to its own totem or structure that players walk up to.
 - The HUD headshot (right of the cash panel) is not clickable yet; later it opens a profile page or the Stats page.
 - Token prices should keep players spending tokens until roughly rebirth 20, and be very expensive.
 - Custom models for every Slop. A new tier directly above Legendary, crafted from 3 Perfect Epic Slops (name TBD). More Slops below Legendary.

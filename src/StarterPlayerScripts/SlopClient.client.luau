@@ -48,7 +48,7 @@ end
 local hud = Instance.new("Frame")
 hud.AnchorPoint = Vector2.new(0.5, 0)
 hud.Position = UDim2.new(0.5, 0, 0, 12)
-hud.Size = UDim2.fromOffset(250, 128)
+hud.Size = UDim2.fromOffset(250, 154)
 hud.BackgroundColor3 = Color3.fromRGB(20, 22, 28)
 hud.BackgroundTransparency = 0.15
 hud.Parent = gui
@@ -58,8 +58,10 @@ local cashLabel = newLabel(hud, UDim2.new(1, -16, 0, 44), UDim2.new(0, 8, 0, 4),
 local incLabel = newLabel(hud, UDim2.new(1, -16, 0, 28), UDim2.new(0, 8, 0, 50), Color3.fromRGB(255, 210, 63))
 local rebLabel = newLabel(hud, UDim2.new(1, -16, 0, 22), UDim2.new(0, 8, 0, 80), Color3.fromRGB(200, 150, 255))
 local tokLabel = newLabel(hud, UDim2.new(1, -16, 0, 22), UDim2.new(0, 8, 0, 103), Color3.fromRGB(255, 226, 120))
+local atmLabel = newLabel(hud, UDim2.new(1, -16, 0, 24), UDim2.new(0, 8, 0, 127), Color3.fromRGB(150, 255, 190))
 
 local function refresh()
+	atmLabel.Text = "CASH TO COLLECT $" .. Config.Format(player:GetAttribute("AtmCash") or 0)
 	cashLabel.Text = "$" .. Config.Format(cash.Value)
 	incLabel.Text = "+$" .. Config.Format(income.Value) .. "/s"
 	rebLabel.Text = "Rebirths: " .. rebirths.Value .. " (x" .. string.format("%.2f", Config.Mult(rebirths.Value)) .. ")"
@@ -69,6 +71,7 @@ for _, v in ipairs({ cash, income, rebirths }) do
 	v.Changed:Connect(refresh)
 end
 player:GetAttributeChangedSignal("Tokens"):Connect(refresh)
+player:GetAttributeChangedSignal("AtmCash"):Connect(refresh)
 refresh()
 
 -- Round headshot right of the HUD, centred on its height. Not clickable yet:
@@ -79,7 +82,7 @@ local FAR_FROM_BASE = 60   -- studs from the plot centre before the pop-up shows
 
 local head = Instance.new("ImageButton")
 head.AnchorPoint = Vector2.new(0, 0.5)
-head.Position = UDim2.new(0.5, 133, 0, 76)   -- HUD spans x -125..125 and y 12..140
+head.Position = UDim2.new(0.5, 133, 0, 89)   -- HUD spans x -125..125 and y 12..166
 head.Size = UDim2.fromOffset(72, 72)
 head.BackgroundColor3 = Color3.fromRGB(20, 22, 28)
 head.BackgroundTransparency = 0.15
@@ -98,7 +101,7 @@ end)
 
 local tpPopup = Instance.new("TextButton")
 tpPopup.AnchorPoint = Vector2.new(0.5, 0)
-tpPopup.Position = UDim2.new(0.5, 0, 0, 148)   -- centred under the HUD (its bottom is at y 140)
+tpPopup.Position = UDim2.new(0.5, 0, 0, 174)   -- centred under the HUD (its bottom is at y 166)
 tpPopup.Size = UDim2.fromOffset(100, 30)
 tpPopup.BackgroundColor3 = Color3.fromRGB(56, 193, 114)
 tpPopup.Text = "BASE"
@@ -219,6 +222,8 @@ Remote.OnClientEvent:Connect(function(kind, a, b)
 		showToast(a)
 	elseif kind == "slap" then
 		floatSlap(a)
+	elseif kind == "collect" then
+		showToast("Collected $" .. Config.Format(a))
 	end
 end)
 

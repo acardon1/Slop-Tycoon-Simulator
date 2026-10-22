@@ -128,6 +128,12 @@ row({
 	{ "+$1T", COL.Green, function() call("cash", 1e12) end },
 })
 
+header("ATM (collect on the pad)")
+row({
+	{ "ATM +$10K", COL.Green, function() call("atm", 1e4) end },
+	{ "ATM +$1B", COL.Green, function() call("atm", 1e9) end },
+})
+
 header("Rebirth Tokens")
 row({
 	{ "+100", BLUE, function() call("tokens", 100) end },

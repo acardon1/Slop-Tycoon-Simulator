@@ -59,6 +59,18 @@ local TANK_W = 6          -- glass footprint
 local TANK_BASE_H = 3     -- console under the glass; its front holds the screen
 local TANK_GLASS_H = 8
 
+-- Factory yard behind each room (open top), and the ATM in the room's back wall
+local FACTORY_D = 44      -- yard depth beyond the room's back wall
+local YARD_WALL_H = 7
+local BACK_DOOR_W, BACK_DOOR_H = 8, 10
+local BACK_DOOR_DX = -14  -- back-wall doorway into the yard, x offset from the plot centre
+local ATM_DX = 4          -- ATM and conveyor line up with the tank grid
+local ATM_W, ATM_H, ATM_D = 8, 10, 6
+local PAD_W, PAD_D = 12, 6    -- Collect pad in front of the ATM
+local BELT_Y = 3          -- top of the factory conveyor
+local DROP_SPEED = 6      -- studs per second along the conveyor
+local DROP_BOX = 2        -- drop box size (PlotClient draws the boxes)
+
 
 -- State
 local State = {}          -- [player] = {Owned = {}, Slots = 6, Rebirths = 0, Plot = plot, Loaded = bool}
@@ -393,6 +405,36 @@ local function incomePerSec(p)
 	return baseInc(p) * totalMult(p)
 end
 
+-- ATM screen, Collect pad outline and the HUD's CASH TO COLLECT (player attribute AtmCash)
+local PAD_EMPTY = Color3.fromRGB(90, 94, 104)
+local PAD_READY = Color3.new(1, 1, 1)
+local PAD_GOLD = Color3.fromRGB(255, 196, 0)
+
+local function setPadColor(plot, cash)
+	local c = (cash >= 1e9 and PAD_GOLD) or (cash >= 1 and PAD_READY) or PAD_EMPTY
+	for _, edge in ipairs(plot.PadOutline) do
+		edge.Color = c
+	end
+end
+
+local function updateAtm(p)
+	local s = State[p]
+	if not s or not s.Plot then return end
+	local plot = s.Plot
+	local cash = math.floor(s.AtmCash)
+	plot.AtmTotal.Text = "$" .. Config.Format(cash)
+	plot.AtmFormula.Text = string.format("Slops $%s/s  x%.2f boosts  =  $%s/s",
+		Config.Format(baseInc(p)), totalMult(p), Config.Format(incomePerSec(p)))
+	setPadColor(plot, cash)
+	p:SetAttribute("AtmCash", cash)
+end
+
+local function clearAtm(plot)
+	plot.AtmTotal.Text = "$0"
+	plot.AtmFormula.Text = "Unclaimed"
+	setPadColor(plot, 0)
+end
+
 local function updateIncome(p)
 	local ls = p:FindFirstChild("leaderstats")
 	local s = State[p]
@@ -400,6 +442,7 @@ local function updateIncome(p)
 		local inc = math.floor(incomePerSec(p))
 		ls.Income.Value = inc
 		if inc > s.Stats.MaxIncome then s.Stats.MaxIncome = inc end
+		updateAtm(p)
 	end
 end
 
@@ -428,7 +471,9 @@ world1.Name = "SlopOverWorld"
 world1.Parent = Workspace
 
 
-local ground1 = mk("Ground", Vector3.new(PLOTS_HALF_LEN * 2 + EDGE_PAD * 2, 1, PLOTS_HALF_WIDTH * 1.5 + EDGE_PAD * 2), CFrame.new(0, -0.4, 0), Color3.fromRGB(90, 166, 70), world1)
+world1:SetAttribute("DropSpeed", DROP_SPEED)   -- PlotClient moves drop boxes at this speed
+
+local ground1 = mk("Ground", Vector3.new(PLOTS_HALF_LEN * 2 + EDGE_PAD * 2, 1, (PLOTS_HALF_WIDTH + FACTORY_D + EDGE_PAD) * 2), CFrame.new(0, -0.4, 0), Color3.fromRGB(90, 166, 70), world1)
 ground1.Material = Enum.Material.Grass
 
 mk("Belt", Vector3.new(BELT_HALF * 2, 1, 8), CFrame.new(0, 0.6, 0), Color3.fromRGB(58, 63, 71), world1)
@@ -495,8 +540,20 @@ local function tankPos(plot, k)
 	return Vector3.new(plot.CX + 4 + (col - 1.5) * TANK_PITCH, 0.5, plot.CZ - plot.Side * (1.5 - row) * TANK_PITCH)
 end
 
--- Office room: walls all round (doorway in the front, toward the belt) and a closed ceiling
--- with neon pipes. The -X wall stands just behind the Slop Machine, so the machine is inside.
+-- A full-height room wall along x (from x0 to x1, plus 0.5 past each end) at z, with a doorway at doorX
+local function wallWithDoor(name, z, doorX, doorW, doorH, x0, x1, color, parent)
+	local doorL, doorR = doorX - doorW / 2, doorX + doorW / 2
+	local leftLen, rightLen = doorL - (x0 - 0.5), (x1 + 0.5) - doorR
+	mk(name, Vector3.new(leftLen, CEIL_Y, 1), CFrame.new(doorL - leftLen / 2, CEIL_Y / 2, z), color, parent)
+	mk(name, Vector3.new(rightLen, CEIL_Y, 1), CFrame.new(doorR + rightLen / 2, CEIL_Y / 2, z), color, parent)
+	local headerBottom = 0.5 + doorH
+	mk("DoorHeader", Vector3.new(doorW, CEIL_Y - headerBottom, 1),
+		CFrame.new(doorX, (headerBottom + CEIL_Y) / 2, z), color, parent)
+end
+
+-- Office room: walls all round (doorway in the front toward the belt, and one in the back into
+-- the factory yard) and a closed ceiling with neon pipes. The -X wall stands just behind the
+-- Slop Machine, so the machine is inside.
 local function buildRoom(plot)
 	local room = Instance.new("Folder")
 	room.Name = "Room"
@@ -510,18 +567,10 @@ local function buildRoom(plot)
 	local frontZ = plot.CZ - plot.Side * PLOT_D / 2
 	local backZ = plot.CZ + plot.Side * PLOT_D / 2
 
-	mk("WallBack", Vector3.new(lenX, CEIL_Y, 1), CFrame.new(midX, CEIL_Y / 2, backZ), wallColor, room)
 	mk("WallSide", Vector3.new(1, CEIL_Y, PLOT_D), CFrame.new(x1, CEIL_Y / 2, plot.CZ), wallColor, room)
 	mk("WallSide", Vector3.new(1, CEIL_Y, PLOT_D), CFrame.new(x0, CEIL_Y / 2, plot.CZ), wallColor, room)
-
-	-- front wall: a piece each side of the doorway, plus the strip above it
-	local doorL, doorR = plot.CX - DOOR_W / 2, plot.CX + DOOR_W / 2
-	local leftLen, rightLen = doorL - (x0 - 0.5), (x1 + 0.5) - doorR
-	mk("WallFront", Vector3.new(leftLen, CEIL_Y, 1), CFrame.new(doorL - leftLen / 2, CEIL_Y / 2, frontZ), wallColor, room)
-	mk("WallFront", Vector3.new(rightLen, CEIL_Y, 1), CFrame.new(doorR + rightLen / 2, CEIL_Y / 2, frontZ), wallColor, room)
-	local headerBottom = 0.5 + DOOR_H
-	mk("DoorHeader", Vector3.new(DOOR_W, CEIL_Y - headerBottom, 1),
-		CFrame.new(plot.CX, (headerBottom + CEIL_Y) / 2, frontZ), wallColor, room)
+	wallWithDoor("WallFront", frontZ, plot.CX, DOOR_W, DOOR_H, x0, x1, wallColor, room)
+	wallWithDoor("WallBack", backZ, plot.CX + BACK_DOOR_DX, BACK_DOOR_W, BACK_DOOR_H, x0, x1, wallColor, room)
 
 	local ceiling = mk("Ceiling", Vector3.new(lenX, 1, PLOT_D + 1), CFrame.new(midX, CEIL_Y + 0.5, plot.CZ), Color3.fromRGB(52, 55, 64), room)
 	local light = Instance.new("SurfaceLight")
@@ -548,8 +597,119 @@ local function buildRoom(plot)
 	end
 end
 
+-- Factory yard behind the room (open top, doorway from the room), the conveyor that carries
+-- drop boxes to the ATM, and the ATM + Collect pad on the room's back wall.
+-- PlotClient draws the boxes along the plot folder's Path1..PathN attributes (world positions).
+local function buildFactory(plot)
+	local f = Instance.new("Folder")
+	f.Name = "Factory"
+	f.Parent = plot.Folder
+
+	local side = plot.Side
+	local x0 = plot.CX - PLOT_W / 2 - 5.5      -- same outline as the room
+	local x1 = plot.CX + PLOT_W / 2
+	local lenX = x1 - x0 + 1
+	local midX = (x0 + x1) / 2
+	local backZ = plot.CZ + side * PLOT_D / 2  -- the room's back wall
+	local farZ = backZ + side * FACTORY_D      -- the yard's far wall
+	local midZ = (backZ + farZ) / 2
+	local toRoom = Vector3.new(0, 0, -side)
+	local concrete = Color3.fromRGB(150, 152, 158)
+	local green = Color3.fromRGB(57, 255, 120)
+
+	-- yard
+	local floor = mk("YardFloor", Vector3.new(lenX, 0.4, FACTORY_D), CFrame.new(midX, 0.3, midZ), Color3.fromRGB(112, 114, 120), f)
+	floor.Material = Enum.Material.Concrete
+	for _, wx in ipairs({ x0, x1 }) do
+		local w = mk("YardWall", Vector3.new(1, YARD_WALL_H, FACTORY_D), CFrame.new(wx, YARD_WALL_H / 2, midZ), concrete, f)
+		w.Material = Enum.Material.Concrete
+	end
+	local farWall = mk("YardWall", Vector3.new(lenX, YARD_WALL_H, 1), CFrame.new(midX, YARD_WALL_H / 2, farZ), concrete, f)
+	farWall.Material = Enum.Material.Concrete
+
+	-- Slop Boxer at the far end: packs the Slops' cash into boxes
+	local ax = plot.CX + ATM_DX
+	local boxerZ = farZ - side * 4             -- 1 to 7 studs in from the far wall
+	local boxer = mk("SlopBoxer", Vector3.new(7, 9, 6), CFrame.new(ax, 4.5, boxerZ), Color3.fromRGB(196, 60, 52), f)
+	local bsg = Instance.new("SurfaceGui")
+	bsg.Face = (side == 1) and Enum.NormalId.Front or Enum.NormalId.Back   -- the face toward the room
+	bsg.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	bsg.PixelsPerStud = 40
+	bsg.Parent = boxer
+	textLabel(bsg, "SLOP BOXER", 0.06, 0.2)
+	local startZ = farZ - side * 7.5           -- just in front of the boxer
+	mk("Chute", Vector3.new(3, 3, 0.4), CFrame.new(ax, BELT_Y + 1.5, farZ - side * 7.1), Color3.fromRGB(12, 12, 14), f)
+
+	-- slop pipe from the room (over the ATM) to the boxer
+	local pipeLen = math.abs(boxerZ - backZ)
+	local pipe = mk("SlopPipe", Vector3.new(pipeLen, 1.2, 1.2),
+		CFrame.new(ax, 12, (backZ + boxerZ) / 2) * CFrame.Angles(0, math.rad(90), 0), green, f)
+	local pipeDown = mk("SlopPipe", Vector3.new(3, 1.2, 1.2),
+		CFrame.new(ax, 10.5, boxerZ) * CFrame.Angles(0, 0, math.rad(90)), green, f)
+	for _, pp in ipairs({ pipe, pipeDown }) do
+		pp.Shape = Enum.PartType.Cylinder
+		pp.Material = Enum.Material.Neon
+		pp.CanCollide = false
+	end
+
+	-- conveyor from the boxer to the ATM's intake
+	local endZ = backZ + side * ATM_D / 2
+	local beltLen = math.abs(endZ - startZ)
+	local beltMidZ = (startZ + endZ) / 2
+	mk("Conveyor", Vector3.new(4, 0.6, beltLen), CFrame.new(ax, BELT_Y - 0.3, beltMidZ), Color3.fromRGB(40, 42, 48), f)
+	mk("ConveyorBase", Vector3.new(3.6, BELT_Y - 0.6, beltLen), CFrame.new(ax, (BELT_Y - 0.6) / 2, beltMidZ), Color3.fromRGB(70, 74, 86), f)
+	for _, dx in ipairs({ -2.15, 2.15 }) do
+		mk("Rail", Vector3.new(0.3, 0.6, beltLen), CFrame.new(ax + dx, BELT_Y + 0.1, beltMidZ), Color3.fromRGB(255, 210, 63), f)
+	end
+	plot.Folder:SetAttribute("PathN", 2)
+	plot.Folder:SetAttribute("Path1", Vector3.new(ax, BELT_Y + DROP_BOX / 2, startZ))
+	plot.Folder:SetAttribute("Path2", Vector3.new(ax, BELT_Y + DROP_BOX / 2, endZ))
+	plot.DropTravel = beltLen / DROP_SPEED     -- seconds from the boxer to the ATM
+
+	-- ATM: goes through the back wall; intake on the yard side, screen on the room side
+	mk("ATM", Vector3.new(ATM_W, ATM_H, ATM_D), CFrame.new(ax, 0.5 + ATM_H / 2, backZ), Color3.fromRGB(46, 50, 60), f)
+	mk("Intake", Vector3.new(3, 2.6, 0.3), CFrame.new(ax, BELT_Y + 1.3, endZ + side * 0.1), Color3.fromRGB(12, 12, 14), f)
+	local screenPos = Vector3.new(ax, 0.5 + ATM_H / 2 + 1, backZ) + toRoom * (ATM_D / 2 + 0.1)
+	local screen = mk("AtmScreen", Vector3.new(ATM_W - 1, ATM_H - 3, 0.2), CFrame.lookAt(screenPos, screenPos + toRoom), Color3.fromRGB(14, 16, 20), f)
+	local sg = Instance.new("SurfaceGui")
+	sg.Face = Enum.NormalId.Front
+	sg.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	sg.PixelsPerStud = 40
+	sg.LightInfluence = 0
+	sg.Parent = screen
+	textLabel(sg, "ATM", 0.03, 0.17, Color3.fromRGB(255, 210, 63))
+	textLabel(sg, "CASH TO COLLECT", 0.22, 0.1, Color3.fromRGB(200, 205, 215))
+	plot.AtmTotal = textLabel(sg, "$0", 0.34, 0.3, Color3.fromRGB(110, 255, 150))
+	plot.AtmFormula = textLabel(sg, "", 0.72, 0.18)
+
+	-- Collect pad: stand on it to collect. Outline: dim = empty, white = cash ready, gold = $1B+
+	local padCenter = Vector3.new(ax, 0.65, backZ) + toRoom * (ATM_D / 2 + 0.5 + PAD_D / 2)
+	local pad = mk("CollectPad", Vector3.new(PAD_W, 0.3, PAD_D), CFrame.new(padCenter), Color3.fromRGB(56, 193, 114), f)
+	local psg = Instance.new("SurfaceGui")
+	psg.Face = Enum.NormalId.Top
+	psg.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	psg.PixelsPerStud = 30
+	psg.Parent = pad
+	textLabel(psg, "COLLECT", 0.15, 0.7)
+	plot.PadCenter = padCenter
+	plot.PadOutline = {}
+	for _, e in ipairs({
+		{ Vector3.new(PAD_W + 0.8, 0.4, 0.4), Vector3.new(0, 0, PAD_D / 2 + 0.2) },
+		{ Vector3.new(PAD_W + 0.8, 0.4, 0.4), Vector3.new(0, 0, -PAD_D / 2 - 0.2) },
+		{ Vector3.new(0.4, 0.4, PAD_D), Vector3.new(PAD_W / 2 + 0.2, 0, 0) },
+		{ Vector3.new(0.4, 0.4, PAD_D), Vector3.new(-PAD_W / 2 - 0.2, 0, 0) },
+	}) do
+		local edge = mk("PadEdge", e[1], CFrame.new(padCenter + e[2] + Vector3.new(0, 0.05, 0)), Color3.fromRGB(90, 94, 104), f)
+		edge.Material = Enum.Material.Neon
+		edge.CanCollide = false
+		table.insert(plot.PadOutline, edge)
+	end
+end
+
+-- Slap and rebirth blocks stand inside the room, one each side of the front doorway.
+-- PLANNED: rebirth moves to its own totem/structure that players walk up to.
 local function mkBlock(plot, name, dx, color, text)
-	local b = mk(name, Vector3.new(3.5, 3.5, 1.5), CFrame.new(plot.CX + dx, 2.25, plot.CZ + plot.Side * (PLOT_D / 2 - 2.5)), color, plot.Folder)
+	local b = mk(name, Vector3.new(3.5, 3.5, 1.5), CFrame.new(plot.CX + dx, 2.25, plot.CZ - plot.Side * (PLOT_D / 2 - 2.5)), color, plot.Folder)
 	local gui = Instance.new("BillboardGui")
 	gui.Size = UDim2.fromOffset(140, 40)
 	gui.StudsOffset = Vector3.new(0, 3, 0)
@@ -696,6 +856,7 @@ for i = 1, NUM_PLOTS do
 	plotPlate.Material = Enum.Material.Fabric
 
 	buildRoom(plot)
+	buildFactory(plot)
 	local dynamic = Instance.new("Folder")
 	dynamic.Name = "Dynamic"
 	dynamic.Parent = folder
@@ -714,7 +875,7 @@ for i = 1, NUM_PLOTS do
 	plot.OwnerLabel = textLabel(lg, "Unclaimed base", 0, 1, Color3.fromRGB(255, 210, 63))
 
 	-- slap block
-	local slap = mkBlock(plot, "Slap", -5, Color3.fromRGB(56, 193, 114), "SLAP")
+	local slap = mkBlock(plot, "Slap", -12, Color3.fromRGB(56, 193, 114), "SLAP")
 	local cd = Instance.new("ClickDetector")
 	cd.MaxActivationDistance = 24
 	cd.Parent = slap
@@ -732,7 +893,7 @@ for i = 1, NUM_PLOTS do
 	---------------------------------------------------------------------------------------------
 	-- rebirth handler
 	---------------------------------------------------------------------------------------------
-	local reb = mkBlock(plot, "Rebirth", 5, Color3.fromRGB(176, 98, 232), "REBIRTH")
+	local reb = mkBlock(plot, "Rebirth", 12, Color3.fromRGB(176, 98, 232), "REBIRTH")
 	plot.RebirthPrompt = mkPrompt(reb, "Rebirth (hold)", "Resets cash and base", 2)
 	plot.RebirthPrompt.Triggered:Connect(function(who)
 		if plot.Owner ~= who or not State[who] then return end
@@ -754,6 +915,9 @@ for i = 1, NUM_PLOTS do
 		giveBadge(who, Config.Badges.FirstRebirth)
 		if s.Rebirths >= 5 then giveBadge(who, Config.Badges.Rebirth5) end
 		setCash(who, 0)
+		-- the ATM is cash too, so it empties (to keep it through rebirth, delete these two lines)
+		s.AtmCash = 0
+		s.Pending = {}
 		s.Owned = {}
 		for k = 1, s.Slots do
 			s.Owned[k] = 0
@@ -1051,6 +1215,8 @@ local function loadData(p)
 		DailyLast = 0, DailyStreak = 0, DailyClaimed = {}, DailySeen = {},
 		Version = Config.DATA_VERSION, Inventory = {}, Discovered = {}, Tokens = 0, Stats = {},
 		RollCount = 1, RollCap = Config.Wheel.CapStart, SpeedLevel = 0, NextRoll = 0,
+		AtmCash = 0,     -- waiting in the ATM (saved)
+		Pending = {},    -- drops still on the conveyor: { At = os.clock() arrival, Amount }
 	}
 	for k, v in pairs(Config.DefaultStats) do
 		s.Stats[k] = v
@@ -1075,6 +1241,7 @@ local function loadData(p)
 		end
 
 		s.Tokens = tonumber(data.Tokens) or 0
+		s.AtmCash = math.max(0, tonumber(data.AtmCash) or 0)
 		if type(data.Inventory) == "table" then
 			for _, v in ipairs(data.Inventory) do
 				local sl = cleanSlop(v)
@@ -1139,6 +1306,10 @@ local function saveData(p)
 	while #s.Receipts > 100 do
 		table.remove(s.Receipts, 1)
 	end
+	local atm = s.AtmCash                -- drops still on the conveyor count as in the ATM
+	for _, d in ipairs(s.Pending) do
+		atm += d.Amount
+	end
 	local ok = pcall(function()
 		Store:SetAsync("P_" .. p.UserId, {
 			Cash = getCash(p),
@@ -1156,6 +1327,7 @@ local function saveData(p)
 			Stats = s.Stats,
 			Discovered = s.Discovered,
 			Tokens = s.Tokens,
+			AtmCash = atm,
 			RollCount = s.RollCount, 
 			RollCap = s.RollCap, 
 			SpeedLevel = s.SpeedLevel,
@@ -1688,6 +1860,7 @@ local function onLeave(p)
 		s.Plot.Dynamic:ClearAllChildren()
 		s.Plot.OwnerLabel.Text = "Unclaimed base"
 		clearMachine(s.Plot)
+		clearAtm(s.Plot)
 	end
 	State[p] = nil
 	badgeSeen[p] = nil
@@ -1723,6 +1896,7 @@ task.spawn(function()
 		task.wait(1)
 		-- tank countdown bars (PlotClient) restart from this shared server time
 		world1:SetAttribute("IncomeTick", Workspace:GetServerTimeNow())
+		local drops = {}   -- { { P = plot index, V = { value per Slop } } } for PlotClient
 		for p, s in pairs(State) do
 			if p.Parent and p:FindFirstChild("leaderstats") then
 				if s.BoostUntil > 0 and s.BoostUntil <= os.time() then
@@ -1731,14 +1905,79 @@ task.spawn(function()
 					refreshPlot(p)
 					notify(p, "Your 2x boost ended")
 				end
-				local gain = math.floor(incomePerSec(p))
-				if s.Passes.AutoSlap then
-					gain += slapValue(p)
+
+				-- every equipped Slop drops a box; its cash reaches the ATM when the box does.
+				-- All boosts (incl. admin x5) still apply here until build step 4 moves them to the ATM.
+				if s.Plot then
+					local mult = totalMult(p)
+					local values, total = {}, 0
+					for _, sl in ipairs(s.Owned) do
+						if sl ~= 0 then
+							local v = slopIncome(sl) * mult
+							total += v
+							table.insert(values, v)
+						end
+					end
+					if total > 0 then
+						-- +0.5s: PlotClient spreads each second's boxes over that second
+						table.insert(s.Pending, { At = os.clock() + s.Plot.DropTravel + 0.5, Amount = total })
+						table.insert(drops, { P = s.Plot.Index, V = values })
+					end
 				end
-				if gain > 0 then
+
+				-- slaps still go straight to the wallet
+				if s.Passes.AutoSlap then
+					local gain = slapValue(p)
 					setCash(p, getCash(p) + gain)
 					addStat(p, "TotalCash", gain)
 					addStat(p, "CashThisRebirth", gain)
+				end
+			end
+		end
+		if #drops > 0 then
+			Remote:FireAllClients("drops", drops)
+		end
+	end
+end)
+
+---------------------------------------------------------------------
+-- ATM: drops arriving, and collecting on the pad
+---------------------------------------------------------------------
+local function onPad(p, plot)
+	local char = p.Character
+	local hrp = char and char:FindFirstChild("HumanoidRootPart")
+	if not hrp then return false end
+	local d = hrp.Position - plot.PadCenter
+	return math.abs(d.X) <= PAD_W / 2 + 0.5 and math.abs(d.Z) <= PAD_D / 2 + 0.5 and d.Y < 8
+end
+
+-- no cooldown: standing on the pad keeps collecting as boxes arrive
+local function collectAtm(p)
+	local s = State[p]
+	local amount = math.floor(s.AtmCash)
+	if amount < 1 then return end
+	s.AtmCash -= amount
+	setCash(p, getCash(p) + amount)
+	addStat(p, "TotalCash", amount)       -- cash counts as earned when collected
+	addStat(p, "CashThisRebirth", amount)
+	Remote:FireClient(p, "collect", amount)
+end
+
+task.spawn(function()
+	while true do
+		task.wait(0.2)
+		local now = os.clock()
+		for p, s in pairs(State) do
+			if s.Plot and p.Parent and p:FindFirstChild("leaderstats") then
+				local before = math.floor(s.AtmCash)
+				while s.Pending[1] and s.Pending[1].At <= now do
+					s.AtmCash += table.remove(s.Pending, 1).Amount
+				end
+				if onPad(p, s.Plot) then
+					collectAtm(p)
+				end
+				if math.floor(s.AtmCash) ~= before then
+					updateAtm(p)
 				end
 			end
 		end
@@ -1915,6 +2154,14 @@ DevRF.OnServerInvoke = function(p, action, a, b)
 		if v then
 			setCash(p, getCash(p) + v)
 			notify(p, "[DEV] +$" .. Config.Format(v))
+		end
+
+	elseif action == "atm" then
+		local v = devAmount(a)
+		if v then
+			s.AtmCash += v
+			updateAtm(p)
+			notify(p, "[DEV] +$" .. Config.Format(v) .. " in the ATM")
 		end
 
 	elseif action == "tokens" then
