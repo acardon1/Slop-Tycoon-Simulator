@@ -1774,7 +1774,9 @@ DevRF.OnServerInvoke = function(p, action, a, b)
 			if #s.Inventory >= Config.INV_MAX then
 				notify(p, "[DEV] Inventory full")
 			else
-				table.insert(s.Inventory, newSlop(idx, (b == true) and Config.MULT_MAX or nil))
+				-- b = exact multiplier picked in the panel, or nil for a normal random roll
+				local mult = tonumber(b) and math.clamp(tonumber(b), Config.MULT_MIN, Config.MULT_MAX) or nil
+				table.insert(s.Inventory, newSlop(idx, mult))
 				discover(p, idx)
 				notify(p, "[DEV] " .. Config.Mons[idx].Name .. " added to inventory")
 			end
@@ -1795,6 +1797,22 @@ DevRF.OnServerInvoke = function(p, action, a, b)
 	elseif action == "cooldown" then
 		s.NextRoll = 0
 		notify(p, "[DEV] Roll cooldown cleared")
+
+	elseif action == "resetUpgrades" then
+		-- Every purchased upgrade back to its starting value. Rebirths have their own reset button.
+		-- ADD NEW UPGRADES HERE (Slop shop, stars, ...) so this keeps resetting everything.
+		for k = #s.Owned, START_SLOTS + 1, -1 do
+			local sl = table.remove(s.Owned, k)
+			if sl ~= 0 then
+				table.insert(s.Inventory, sl)   -- Slops on removed spots go back to inventory
+			end
+		end
+		s.Slots = START_SLOTS
+		s.RollCount = 1
+		s.RollCap = Config.Wheel.CapStart
+		s.SpeedLevel = 0
+		refreshPlot(p)
+		notify(p, "[DEV] All upgrades reset")
 
 	elseif action == "event" then
 		if table.find(EVENT_KINDS, a) then

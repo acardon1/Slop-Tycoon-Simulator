@@ -34,7 +34,7 @@ Roblox tycoon game (Luau) with brainrot-style "Slop" characters. The owner is no
 - Belt events every 45-90s: Admin Abuse (income x5 for 15s), Raining Brainrot (flooded belt 10s), Belt Rush (belt runs 30s), Lucky Block (free cash). The belt only runs during events.
 - Shop UI (SHOP button) lists `Config.ShopItems`.
 - On-plot Slop selling (Sell prompt on placed Slops) **stays permanently**, including after the plot rebuild. Selling from the inventory menu also works.
-- DevTools: `DevClient` LocalScript + `SlopDev` RemoteFunction. The DEV panel always shows in Studio; in live servers only for UserIds in `Config.DevUserIds`. Using a cheat turns off saving for that player for the session (`Config.DEV_BLOCK_SAVE`). Add a button there whenever a new feature needs quick testing.
+- DevTools: `DevClient` LocalScript + `SlopDev` RemoteFunction. The DEV panel always shows in Studio; in live servers only for UserIds in `Config.DevUserIds`. Using a cheat turns off saving for that player for the session (`Config.DEV_BLOCK_SAVE`). Add a button there whenever a new feature needs quick testing. **Every new upgrade (Slop shop, stars, etc.) must also be reset by the DevTools "resetUpgrades" action** in `SlopServer`.
 - Studio Play always runs a private local server, never a live one. It only reads real save data when the place opened in Studio is the published game (File > Open from Roblox) with Studio API access on; a local `.rbxl` has saving off.
 
 ## Settled game rules

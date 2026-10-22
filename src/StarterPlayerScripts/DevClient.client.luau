@@ -135,11 +135,14 @@ row({
 	{ "+1M", BLUE, function() call("tokens", 1e6) end },
 })
 
-header("Rebirths and rolls")
+header("Rebirths, rolls and upgrades")
 row({
 	{ "+1 Rebirth", PURPLE, function() call("rebirth") end },
 	{ "Reset to 0", COL.Gray, function() call("resetRebirths") end },
 	{ "No cooldown", ORANGE, function() call("cooldown") end },
+})
+row({
+	{ "Reset all upgrades", COL.Red, function() call("resetUpgrades") end },
 })
 
 header("Server events")
@@ -154,13 +157,15 @@ row({
 
 -- Slops: tap one to add it to your inventory
 header("Give Slop (goes to inventory)")
-local perfect = false
-local perfectBtn
-perfectBtn = row({
+-- quality button cycles Random -> each tier in Config.MultTiers; a tier gives its minimum multiplier
+local quality = 0          -- 0 = random roll, otherwise an index into Config.MultTiers
+local qualityBtn
+qualityBtn = row({
 	{ "Quality: Random", COL.Gray, function()
-		perfect = not perfect
-		perfectBtn.Text = perfect and "Quality: Perfect" or "Quality: Random"
-		perfectBtn.BackgroundColor3 = perfect and Config.MultTiers[#Config.MultTiers].Color or COL.Gray
+		quality = (quality + 1) % (#Config.MultTiers + 1)
+		local tier = Config.MultTiers[quality]
+		qualityBtn.Text = tier and string.format("Quality: %s x%.2f", tier.Name, tier.Min) or "Quality: Random"
+		qualityBtn.BackgroundColor3 = tier and tier.Color or COL.Gray
 	end },
 })[1]
 
@@ -180,7 +185,8 @@ for i, m in ipairs(Config.Mons) do
 	local b = UI.button(grid, m.Emoji .. " " .. m.Name, UDim2.new(), UDim2.new(), Config.Rarities[m.Rarity].Color)
 	b.LayoutOrder = i
 	b.Activated:Connect(function()
-		call("slop", i, perfect)
+		local tier = Config.MultTiers[quality]
+		call("slop", i, tier and tier.Min)
 	end)
 end
 
