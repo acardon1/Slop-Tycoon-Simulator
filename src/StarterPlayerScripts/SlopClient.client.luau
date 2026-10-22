@@ -71,6 +71,63 @@ end
 player:GetAttributeChangedSignal("Tokens"):Connect(refresh)
 refresh()
 
+-- Quick TP: round headshot left of the HUD. Tapping it (or the "TP TO BASE" pop-up that
+-- shows when you are far from your plot) asks the server to move you to your own plot.
+local FAR_FROM_BASE = 60   -- studs from the plot centre before the pop-up shows
+
+local head = Instance.new("ImageButton")
+head.AnchorPoint = Vector2.new(1, 0)
+head.Position = UDim2.new(0.5, -133, 0, 12)
+head.Size = UDim2.fromOffset(72, 72)
+head.BackgroundColor3 = Color3.fromRGB(20, 22, 28)
+head.BackgroundTransparency = 0.15
+head.Parent = gui
+style(head)
+head:FindFirstChildOfClass("UICorner").CornerRadius = UDim.new(1, 0)
+
+task.spawn(function()
+	local ok, img = pcall(function()
+		return Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
+	end)
+	if ok then
+		head.Image = img
+	end
+end)
+
+local tpPopup = Instance.new("TextButton")
+tpPopup.AnchorPoint = Vector2.new(0.5, 0)
+tpPopup.Position = UDim2.new(0.5, -169, 0, 90)
+tpPopup.Size = UDim2.fromOffset(120, 30)
+tpPopup.BackgroundColor3 = Color3.fromRGB(56, 193, 114)
+tpPopup.Text = "TP TO BASE"
+tpPopup.Font = Enum.Font.FredokaOne
+tpPopup.TextScaled = true
+tpPopup.TextColor3 = Color3.new(1, 1, 1)
+tpPopup.Visible = false
+tpPopup.Parent = gui
+style(tpPopup)
+
+local function goHome()
+	Remote:FireServer("home")
+end
+head.Activated:Connect(goHome)
+tpPopup.Activated:Connect(goHome)
+
+task.spawn(function()
+	while true do
+		local center = player:GetAttribute("PlotCenter")
+		local char = player.Character
+		local hrp = char and char:FindFirstChild("HumanoidRootPart")
+		local far = false
+		if center and hrp then
+			local offset = hrp.Position - center
+			far = Vector2.new(offset.X, offset.Z).Magnitude > FAR_FROM_BASE
+		end
+		tpPopup.Visible = far
+		task.wait(0.5)
+	end
+end)
+
 
 -- Event banner
 local banner = Instance.new("TextLabel")
@@ -192,21 +249,6 @@ shopButton.TextColor3 = Color3.new(1, 1, 1)
 shopButton.Parent = gui
 style(shopButton)
 
--- Quick TP: asks the server to move you to your own plot
-local homeButton = Instance.new("TextButton")
-homeButton.AnchorPoint = Vector2.new(0, 1)
-homeButton.Position = UDim2.new(0, 154, 1, -12)
-homeButton.Size = UDim2.fromOffset(130, 48)
-homeButton.BackgroundColor3 = Color3.fromRGB(59, 143, 224)
-homeButton.Text = "🏠 BASE"
-homeButton.Font = Enum.Font.FredokaOne
-homeButton.TextScaled = true
-homeButton.TextColor3 = Color3.new(1, 1, 1)
-homeButton.Parent = gui
-style(homeButton)
-homeButton.Activated:Connect(function()
-	Remote:FireServer("home")
-end)
 
 local shop = Instance.new("Frame")
 shop.AnchorPoint = Vector2.new(0.5, 0.5)

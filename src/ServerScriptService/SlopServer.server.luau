@@ -1621,7 +1621,7 @@ local function teleport(p)
 	end
 end
 
--- HUD "BASE" button (SlopClient). The server does the move, so it only ever goes to your own plot.
+-- HUD headshot / "TP TO BASE" pop-up (SlopClient). The server does the move, so it only ever goes to your own plot.
 local lastHome = {}   -- [player] = os.clock() of the last teleport
 Remote.OnServerEvent:Connect(function(p, action)
 	if action == "home" then
@@ -1663,6 +1663,7 @@ local function onJoin(p)
 
 	if s.Plot then
 		s.Plot.OwnerLabel.Text = p.DisplayName .. "'s Base"
+		p:SetAttribute("PlotCenter", Vector3.new(s.Plot.CX, 0, s.Plot.CZ))   -- SlopClient shows "TP TO BASE" when far from it
 		refreshPlot(p)
 		refreshMachine(p)
 	else
