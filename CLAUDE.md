@@ -131,6 +131,7 @@ None of these are built yet.
 - Map spawns are a small version of the Slop, about half stuck in the ground. When modifiers exist, map-spawned Slops get an exclusive tag such as "Stranded" or "Lone Wolf", and if they spawn during an event or weather that gives a modifier (the `Type` field in the code), they also carry that modifier.
 - Modifiers (`Type` is the placeholder name): rolled or bought during events or weather, each with a set effect (e.g. "Golden": about +20% cash drop). Comes after Phase 4.
 - Wide Noob: bald, faceless politician-lookalike Secret Slop, Phase 4. Mythic joins the Day 7 daily pool after first claim (Phase 4). Daily Drip Dino is the first-claim Day 7 reward (Special rarity).
+- The HUD headshot (right of the cash panel) is not clickable yet; later it opens a profile page or the Stats page.
 - Token prices should keep players spending tokens until roughly rebirth 20, and be very expensive.
 - Custom models for every Slop. A new tier directly above Legendary, crafted from 3 Perfect Epic Slops (name TBD). More Slops below Legendary.
 - World2/World3 (commented out in `SlopServer`) are not planned; the commented code can be removed. The Rebirth5 badge comment ("unlocks the second world") is out of date.

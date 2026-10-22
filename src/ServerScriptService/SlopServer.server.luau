@@ -1621,7 +1621,7 @@ local function teleport(p)
 	end
 end
 
--- HUD headshot, "TP TO BASE" pop-up and BASE button (SlopClient). The server does the move, so it only ever goes to your own plot.
+-- HUD "BASE" pop-up and BASE button (SlopClient). The server does the move, so it only ever goes to your own plot.
 local lastHome = {}   -- [player] = os.clock() of the last teleport
 Remote.OnServerEvent:Connect(function(p, action)
 	if action == "home" then

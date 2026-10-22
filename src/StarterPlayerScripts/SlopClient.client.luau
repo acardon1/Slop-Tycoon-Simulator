@@ -71,9 +71,10 @@ end
 player:GetAttributeChangedSignal("Tokens"):Connect(refresh)
 refresh()
 
--- Quick TP: round headshot right of the HUD, centred on its height. Tapping it, the
--- "TP TO BASE" pop-up beside it (shows when you are far from your plot), or the BASE
--- button (bottom left) asks the server to move you to your own plot.
+-- Round headshot right of the HUD, centred on its height. Not clickable yet:
+-- LATER it opens a profile page or the Stats page (connect head.Activated then).
+-- Quick TP: the "BASE" pop-up under the HUD (shows when you are far from your plot)
+-- and the BASE button (bottom left) ask the server to move you to your own plot.
 local FAR_FROM_BASE = 60   -- studs from the plot centre before the pop-up shows
 
 local head = Instance.new("ImageButton")
@@ -96,11 +97,11 @@ task.spawn(function()
 end)
 
 local tpPopup = Instance.new("TextButton")
-tpPopup.AnchorPoint = Vector2.new(0, 0.5)
-tpPopup.Position = UDim2.new(0.5, 213, 0, 76)   -- just right of the headshot, clear of the HUD
-tpPopup.Size = UDim2.fromOffset(120, 30)
+tpPopup.AnchorPoint = Vector2.new(0.5, 0)
+tpPopup.Position = UDim2.new(0.5, 0, 0, 148)   -- centred under the HUD (its bottom is at y 140)
+tpPopup.Size = UDim2.fromOffset(100, 30)
 tpPopup.BackgroundColor3 = Color3.fromRGB(56, 193, 114)
-tpPopup.Text = "TP TO BASE"
+tpPopup.Text = "BASE"
 tpPopup.Font = Enum.Font.FredokaOne
 tpPopup.TextScaled = true
 tpPopup.TextColor3 = Color3.new(1, 1, 1)
@@ -111,7 +112,6 @@ style(tpPopup)
 local function goHome()
 	Remote:FireServer("home")
 end
-head.Activated:Connect(goHome)
 tpPopup.Activated:Connect(goHome)
 
 local homeButton = Instance.new("TextButton")
