@@ -73,9 +73,9 @@ Config.TOKEN_RATE = 0.00002      -- 0.002% of cash earned this rebirth
 Config.MULT_MIN, Config.MULT_MAX = 1, 1.25
 Config.MultTiers = {
 	{ Name = "Normal",    Min = 1.00, Color = Color3.fromRGB(150, 155, 165) },
-	{ Name = "Good",      Min = 1.05, Color = Color3.fromRGB(86, 176, 96) },
-	{ Name = "Great",     Min = 1.10, Color = Color3.fromRGB(47, 147, 232) },
-	{ Name = "Excellent", Min = 1.15, Color = Color3.fromRGB(162, 79, 224) },
+	{ Name = "Good",      Min = 1.10, Color = Color3.fromRGB(86, 176, 96) },
+	{ Name = "Great",     Min = 1.17, Color = Color3.fromRGB(47, 147, 232) },
+	{ Name = "Excellent", Min = 1.22, Color = Color3.fromRGB(162, 79, 224) },
 	{ Name = "Perfect",   Min = 1.25, Color = Color3.fromRGB(240, 165, 0) },
 }
 
@@ -119,9 +119,11 @@ function Config.MultTier(m)
 end
 
 -- Wheel (costs below are placeholders)
+-- Roll cooldown: 10s -> 5s in 1s steps (first MidLevel upgrades), then 5s -> 1s in equal steps (0.4s).
 Config.Wheel = {
 	CapStart = 3, CapMax = 10,
-	CooldownStart = 5, CooldownMin = 1, SpeedLevels = 10,
+	CooldownStart = 10, CooldownMid = 5, CooldownMin = 1,
+	MidLevel = 5, SpeedLevels = 15,
 }
 
 -- Slot machine (replaces the wheel UI). One reel unlocks per roll upgrade.
@@ -143,7 +145,11 @@ end
 
 function Config.RollCooldown(level)
 	local w = Config.Wheel
-	return math.max(w.CooldownMin, w.CooldownStart - level * (w.CooldownStart - w.CooldownMin) / w.SpeedLevels)
+	level = math.clamp(level, 0, w.SpeedLevels)
+	if level <= w.MidLevel then
+		return w.CooldownStart - level * (w.CooldownStart - w.CooldownMid) / w.MidLevel
+	end
+	return w.CooldownMid - (level - w.MidLevel) * (w.CooldownMid - w.CooldownMin) / (w.SpeedLevels - w.MidLevel)
 end
 
 function Config.RollUpgradeCost(n)  return 5000 * 5 ^ (n - 1) end                 -- cash: n -> n+1 rolls

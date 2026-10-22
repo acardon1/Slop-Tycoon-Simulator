@@ -42,10 +42,10 @@ Roblox tycoon game (Luau) with brainrot-style "Slop" characters. The owner is no
 Each rule is tagged **(built)** or **(not built yet)**. When it is not built, the note says what the code does today.
 
 - Rolls are free with a cooldown. **(built)**
-- Cooldown starts at 10s; each early upgrade drops it 1s until 5s, then 0.5s per upgrade after that. **(not built yet: code is 5s down to 1s in 0.4s steps, `Config.Wheel` + `Config.RollCooldown`)**
+- Cooldown: 15 speed upgrades. Starts at 10s, the first 5 upgrades drop it 1s each to 5s, the next 10 drop it 0.4s each to 1s. **(built: `Config.Wheel` + `Config.RollCooldown`)**
 - Roll cap starts at 3, max 10. **(built)**
 - Equip slots are bought with rebirth tokens, max 16. **(built)** Start at 4 slots. **(not built yet: code is 5; changes with the plot rebuild, needs `DATA_VERSION` 4 and a save upgrade that moves the 5th Slop to inventory)**
-- Every Slop rolls a cash multiplier x1.00 to x1.25 shown as a Quality tier. **(built)** Tiers: Normal 1.00, Good 1.10, Great 1.17, Excellent 1.22, Perfect 1.25 (Perfect = max roll only). **(not built yet: config has Good 1.05, Great 1.10, Excellent 1.15)**
+- Every Slop rolls a cash multiplier x1.00 to x1.25 shown as a Quality tier. **(built)** Tiers: Normal 1.00, Good 1.10, Great 1.17, Excellent 1.22, Perfect 1.25 (Perfect = max roll only). **(built)**
 - Reels show odds as "1 in X". **(not built yet: reels show emoji)**
 - Bought Slops go to inventory first **(built)** and auto-equip if a slot is open. **(not built yet)**
 - Rebirth resets inventory and placed Slops. **(built)** Tokens come from rebirthing: 0.002% of cash earned that rebirth minus the rebirth cost, soft cap. **(not built yet: code is 0.002% of cash earned, no minus, no cap)** Token rework is delayed until after the plot rebuild.
@@ -61,8 +61,50 @@ Each rule is tagged **(built)** or **(not built yet)**. When it is not built, th
 - Starting slots drop to 4 in the rebuild (see Settled game rules).
 - ATM on the back wall: intake side faces the factory, screen faces the room showing a formula and the green total. Collect pad outline is white when cash is ready and gold above $1B.
 - Factory starts beyond the old back wall. Winding conveyor that winds more as it grows. Gates change each drop's value and look (e.g. "Flood Gate" makes it wet). Drops are boxes labeled "[SLOP]" in red ACME-style lettering with a dollar amount above that rises per gate. Draw drops on the client with a cap on how many show.
-- Tycoon buttons unlock factory pieces. First ten proposed in the roadmap doc (Power Switch, Slop Squeezer, Flood Gate, Greasy Rails, First Bend, Goo Injector, Second Bend, Slop Polisher, Overclocked Motors, Big Brain Gate). **Owner wants multipliers toned down:** flat additive ~+10% steps totaling about x2.5 by the 10th gate (or 20th) using the existing numbers.
-- **Balance target (run the math before building):** in the first life with 0 rebirths, a player with 4 Rare or Epic Slops should max the factory (10th button) in about 15 minutes of play, then save for the first rebirth in about 5 more minutes. Add a note on whether players must max the factory before each rebirth.
+- Tycoon buttons unlock factory pieces. First ten proposed in the roadmap doc (Power Switch, Slop Squeezer, Flood Gate, Greasy Rails, First Bend, Goo Injector, Second Bend, Slop Polisher, Overclocked Motors, Big Brain Gate).
+- **Gate rules (decided):** a button is either a **drop gate** (adds to the cash value of every drop passing it; drop gates add together) or a **Slop buff** (raises every equipped Slop's base cash, shown on its tank). Total = Slop cash x (1 + Slop buffs) x (1 + drop gates). The first 3 gates are +5%. Gates get stronger over time but never above +10% each, and +10% is first reached in factory section 3. Long-term aim is about x2.5 over 20 gates.
+- **Slop buffs (decided):** always multiples of 5%. Two per factory section: section 1 buffs are +5% each, section 2 +10% each, and so on.
+- **Section 1 button table (decided):**
+
+  | # | Button | Effect | Cost |
+  |---|---|---|---|
+  | 1 | Power Switch | Drop +5% | $13K |
+  | 2 | Slop Squeezer | Drop +5% | $21K |
+  | 3 | Flood Gate | Drop +5% (wet look) | $34K |
+  | 4 | Greasy Rails | Slop buff +5% | $55K |
+  | 5 | First Bend | Drop +6% (conveyor bends) | $88K |
+  | 6 | Goo Injector | Drop +6% | $140K |
+  | 7 | Second Bend | Drop +7% (bends again) | $225K |
+  | 8 | Slop Polisher | Slop buff +5% | $360K |
+  | 9 | Overclocked Motors | Drop +8% | $575K |
+  | 10 | Big Brain Gate | Drop +8% | $921K |
+
+  At button 10: drops x1.50, Slops x1.10, about x1.65 total. Costs rise 1.6x per button (~$2.43M total).
+- **The factory runs from the start (decided).** Power Switch is just the first +5% gate, not an on switch.
+- **Balance target (decided):** in the first life with 0 rebirths, a player with **4 average Epic Slops** (~$1,890/s) maxes the 10th button in about 15 minutes, then saves for the first rebirth in about 5 more minutes. Other teams are slower or faster by design (2 Rare + 2 Epic ~27 min, 4 average Rare ~2 h).
+- **Rebirth and the factory (decided):** rebirth resets all factory buttons. Maxing the factory is **not** required to rebirth.
+- **First rebirth cost (decided): about $1M** (5 min at ~$3,120/s with 4 average Epic Slops and a maxed section 1), still x3 per rebirth. Change `Config.RebirthCost` in build step 3 together with the buttons, not before (without the factory it would make rebirth too slow).
+- Balance math method: simulate a player buying each button as soon as they can afford it, and tune the first cost so the 10th button lands at 15 min.
+
+## Plot rebuild build order
+
+Each step is tested in Studio and committed before the next starts.
+
+1. **Office room + tanks:** closed-top room with neon-pipe ceiling, 4x4 see-through tanks with Slops floating inside, and each tank showing its next drop and countdown. Income still goes straight to the wallet. On-plot Sell prompts move onto the tanks.
+2. **Factory + ATM:** conveyor beyond the back wall, client-drawn "[SLOP]" drop boxes (capped count), ATM on the back wall, Collect pad, CASH TO COLLECT HUD. Income moves to the ATM.
+3. **Buttons + gates:** the section 1 table above, rebirth resets buttons, `Config.RebirthCost` to ~$1M, DevTools buttons to buy and reset factory buttons (add to `resetUpgrades`).
+4. **Finish:** Rebirth and 2x boost/pass applied at the ATM with their lines, admin x5 at drop time, 4 starting slots with `DATA_VERSION` 4 and the save upgrade.
+
+## Progress log
+
+- **2026-10-22:**
+  - Fixed falling into the void: `GetDataStore` is now in a `pcall`. It errored in a local `.rbxl` and stopped `SlopServer` before the world was built.
+  - Added DevTools: cash, tokens, rebirths, cooldown reset, events, any Slop at any quality, reset all upgrades.
+  - Server events moved into `runEvent`.
+  - `SlopTycoon.rbxl` is no longer tracked in git.
+  - Quality tiers and the 15-level roll cooldown now match the settled rules.
+  - Ran the section 1 balance math and settled the gate rules, button table and rebirth target.
+  - **Next:** start build step 1 when the owner says go.
 - Token prices should keep players spending tokens until roughly rebirth 20, and be very expensive.
 
 ## Badges
