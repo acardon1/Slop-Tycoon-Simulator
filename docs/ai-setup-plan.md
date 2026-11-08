@@ -23,7 +23,63 @@ Roadmap for setting up AI-assisted development on this repo. Work through the st
 - [x] Add `.env` to `.gitignore` for API keys.
 - [x] Commit on branch `ai-setup` for partner review.
 - [x] Follow-up: clean up the existing code so selene and `stylua --check` pass (done 2026-11-08, see the handoff log).
-- [ ] Follow-up: move hardcoded tunable values from scripts into `SlopConfig` (Part 3 of the cleanup).
+- [ ] Follow-up: move hardcoded tunable values from scripts into `SlopConfig` (Part 3 of the cleanup). List below, approved by the owner on 2026-11-08.
+
+### Part 3: values to move into `SlopConfig`
+
+Behaviour must stay the same: same numbers, only their home changes. Line numbers drift, so find each one by name or search.
+
+- [ ] **Batch 1: groups A + B + D** (one commit after a Studio play-test)
+- [ ] **Batch 2: group C** (separate commit; check the layout in Studio with the MCP)
+
+**A. Gameplay (SlopServer)**
+
+| Now in script | Value | What it is |
+|---|---|---|
+| `SPEED` | 10 | belt speed (studs/s) |
+| `START_SLOTS` / `MAX_SLOTS` | 5 / 16 | equip slots. `Config.SlotCost` also hardcodes the 5 (`slots - 5`); make it use the new value |
+| `NUM_PLOTS` | 8 | plots per server |
+| `DROP_SPEED` | 6 | conveyor drop speed (also sent to clients as the `DropSpeed` attribute) |
+| autosave `task.wait(60)` | 60 | autosave interval |
+| income tick `task.wait(1)` | 1 | income tick |
+| Collect pad loop `task.wait(0.2)` | 0.2 | Collect-pad check rate |
+| belt spawner `raining and 0.45 or (1.7 + math.random() * 0.5)` | 0.45 / 1.7 + 0–0.5 | belt spawn gap (raining / normal) |
+| `runEvent` AdminAbuse: `adminMult = 5`, `task.wait(15)` | 5, 15s | Admin Abuse |
+| `runEvent` Rain: `task.wait(10)` | 10s | Raining Brainrot |
+| `runEvent` BeltRush: `task.wait(30)` | 30s | Belt Rush |
+| LuckyBlock: `math.max(100, incomePerSec(p) * 60)` | min $100, 60s of income | Lucky Block gift |
+| event loop `math.random(45, 90)` | 45–90s | gap between events |
+| event loop `r < 0.3 / 0.55 / 0.8` | 30/25/25/20% | event odds (Admin / Rain / Rush / Lucky) |
+| `slapValue`: `2 + baseInc(p) * 0.05` | $2 + 5% of base income | slap payout |
+
+The event banners have "x5", "15s", "10s", "30s" typed into the text. Build that text from the config values so it can't disagree with the event.
+
+**B. Prompt and click reach (`MaxActivationDistance`, `HoldDuration`)**
+
+| Where | Value |
+|---|---|
+| default prompt (`mkPrompt`) | 14 |
+| slot machine lever | 18 |
+| slap block ClickDetector | 24 |
+| tank Sell prompt | 8 (hold 0.3s) |
+| belt Buy prompt | 12 (hold 0.4s) |
+| slot machine click (SlotClient) | 80 |
+
+**C. World and plot layout (SlopServer top, "Layout Settings" and below)**
+
+`PLOT_W` 56, `PLOT_D` 60, `PLOT_GAP` 40, `PLAZA` 14, `CURB_W` 1, `BELT_W` 8, `EDGE_PAD` 50, `ROOM_H` 16, `DOOR_W/H` 16/11, `TANK_PITCH` 10, `TANK_W` 6, `TANK_BASE_H` 3, `TANK_GLASS_H` 8, `FACTORY_D` 44, `YARD_WALL_H` 7, `BACK_DOOR_W/H` 8/10, `BACK_DOOR_DX` -14, `ATM_DX` 4, `ATM_W/H/D` 8/10/6, `PAD_W/D` 12/6, `BELT_Y` 3, `DROP_BOX` 2, reel `HEX_S` 3, reel `RY` 7.75.
+
+**D. Client**
+
+| Where | Value | What it is |
+|---|---|---|
+| PlotClient `MAX_PER_TICK` | 4 | boxes per plot per drop |
+| PlotClient `MAX_PER_PLOT` / `MAX_BOXES` | 30 / 120 | box caps |
+| PlotClient `DRAW_RANGE` | 300 | box draw distance |
+| PlotClient `BOX_SIZE` | 2 | copy of the server's `DROP_BOX`; point both at one config value |
+| SlopClient `FAR_FROM_BASE` | 60 | when the BASE pop-up shows |
+
+**Leave in the scripts:** UI pixel sizes and tween times (`PANEL_W`, 0.2s/0.8s tweens, UI refresh loops; the UI skill will cover them), values calculated from others (`PLOT_PITCH`, `CEIL_Y`, ...), and `DAY = 86400`.
 
 ## Step 2: Roblox Studio MCP
 
