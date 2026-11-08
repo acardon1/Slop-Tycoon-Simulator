@@ -28,11 +28,11 @@ if not storeOk then
 	Store = nil
 end
 
--- Settings
-local SPEED = 10 -- studs per second
-local START_SLOTS = 5
-local MAX_SLOTS = 16
-local NUM_PLOTS = 8
+-- Settings (the numbers live in SlopConfig, "GAMEPLAY TUNING")
+local SPEED = Config.BELT_SPEED
+local START_SLOTS = Config.START_SLOTS
+local MAX_SLOTS = Config.MAX_SLOTS
+local NUM_PLOTS = Config.NUM_PLOTS
 
 -- Layout Settings
 local PLOT_W = 56 -- plot width; size along the belt (x)
@@ -67,8 +67,8 @@ local ATM_DX = 4 -- ATM and conveyor line up with the tank grid
 local ATM_W, ATM_H, ATM_D = 8, 10, 6
 local PAD_W, PAD_D = 12, 6 -- Collect pad in front of the ATM
 local BELT_Y = 3 -- top of the factory conveyor
-local DROP_SPEED = 6 -- studs per second along the conveyor
-local DROP_BOX = 2 -- drop box size (PlotClient draws the boxes)
+local DROP_SPEED = Config.Drops.Speed -- studs per second along the conveyor
+local DROP_BOX = Config.Drops.BoxSize -- drop box size (PlotClient draws the boxes)
 
 -- State
 local State = {} -- [player] = {Owned = {}, Slots = 6, Rebirths = 0, Plot = plot, Loaded = bool}
@@ -133,7 +133,7 @@ local function mkPrompt(parent, action, object, hold)
 	pp.ActionText = action
 	pp.ObjectText = object
 	pp.HoldDuration = hold or 0
-	pp.MaxActivationDistance = 14
+	pp.MaxActivationDistance = Config.Reach.Default
 	pp.RequiresLineOfSight = false
 	pp.Parent = parent
 	return pp
@@ -469,7 +469,7 @@ local function updateIncome(p)
 end
 
 local function slapValue(p)
-	return math.max(1, math.floor((2 + baseInc(p) * 0.05) * totalMult(p)))
+	return math.max(1, math.floor((Config.Slap.Base + baseInc(p) * Config.Slap.IncomeShare) * totalMult(p)))
 end
 
 local function addStat(p, name, amount)
@@ -933,7 +933,7 @@ local function buildMachine(plot)
 	plot.Displays = {}
 
 	local pp = mkPrompt(knob, "Pull Lever", "Slop Machine", 0)
-	pp.MaxActivationDistance = 18
+	pp.MaxActivationDistance = Config.Reach.Lever
 	pp.Triggered:Connect(function(who)
 		if plot.Owner ~= who or not State[who] then
 			notify(
@@ -1001,7 +1001,7 @@ for i = 1, NUM_PLOTS do
 	-- slap block
 	local slap = mkBlock(plot, "Slap", -12, Color3.fromRGB(56, 193, 114), "SLAP")
 	local cd = Instance.new("ClickDetector")
-	cd.MaxActivationDistance = 24
+	cd.MaxActivationDistance = Config.Reach.SlapBlock
 	cd.Parent = slap
 	cd.MouseClick:Connect(function(who)
 		if plot.Owner ~= who or not State[who] then
@@ -1192,8 +1192,8 @@ local function buildTank(p, plot, k, sl, mult)
 
 		tank:SetAttribute("DropTime", m.DropTime)
 
-		local pp = mkPrompt(glass, "Sell for $" .. Config.Format(math.floor(m.Price / 2)), m.Name, 0.3)
-		pp.MaxActivationDistance = 8
+		local pp = mkPrompt(glass, "Sell for $" .. Config.Format(math.floor(m.Price / 2)), m.Name, Config.Hold.TankSell)
+		pp.MaxActivationDistance = Config.Reach.TankSell
 		pp.Triggered:Connect(function(who)
 			if who == p then
 				sell(p, k)
@@ -1373,7 +1373,8 @@ task.spawn(function()
 			if not ok then
 				warn("[Slop] spawnItem failed: " .. tostring(err))
 			end
-			task.wait(raining and 0.45 or (1.7 + math.random() * 0.5))
+			local gap = Config.BeltSpawnGap
+			task.wait(raining and gap.Raining or (gap.Min + math.random() * gap.Random))
 		else
 			task.wait(0.5)
 		end
@@ -1625,8 +1626,8 @@ local function buildOfferDisplay(plot, o)
 	textLabel(gui, tier.Name, 0.36, 0.28, tier.Color)
 	textLabel(gui, "$" .. Config.Format(m.Price), 0.64, 0.36, Color3.fromRGB(110, 255, 150))
 
-	local pp = mkPrompt(primary, "Buy  $" .. Config.Format(m.Price), m.Name, 0.4)
-	pp.MaxActivationDistance = 12
+	local pp = mkPrompt(primary, "Buy  $" .. Config.Format(m.Price), m.Name, Config.Hold.OfferBuy)
+	pp.MaxActivationDistance = Config.Reach.OfferBuy
 	pp.Triggered:Connect(function(who)
 		if plot.Owner ~= who then
 			notify(who, "That's not your machine!")
@@ -2152,7 +2153,7 @@ end)
 
 task.spawn(function()
 	while true do
-		task.wait(60)
+		task.wait(Config.AUTOSAVE_SECONDS)
 		for _, p in ipairs(Players:GetPlayers()) do
 			saveData(p)
 		end
@@ -2164,7 +2165,7 @@ end)
 ---------------------------------------------------------------------
 task.spawn(function()
 	while true do
-		task.wait(1)
+		task.wait(Config.INCOME_TICK)
 		-- tank countdown bars (PlotClient) restart from this shared server time
 		world1:SetAttribute("IncomeTick", Workspace:GetServerTimeNow())
 		local drops = {} -- { { P = plot index, V = { value per Slop } } } for PlotClient
@@ -2240,7 +2241,7 @@ end
 
 task.spawn(function()
 	while true do
-		task.wait(0.2)
+		task.wait(Config.COLLECT_CHECK)
 		local now = os.clock()
 		for p, s in pairs(State) do
 			if s.Plot and p.Parent and p:FindFirstChild("leaderstats") then
@@ -2277,29 +2278,34 @@ local function runEvent(kind)
 		return false
 	end
 	eventRunning = true
+	local ev = Config.Events[kind]
 	if kind == "AdminAbuse" then
-		adminMult = 5
+		adminMult = ev.Mult
 		updateAllIncome()
-		Remote:FireAllClients("banner", "ADMIN ABUSE! Income x5 for 15s", 15)
-		task.wait(15)
+		Remote:FireAllClients("banner", "ADMIN ABUSE! Income x" .. ev.Mult .. " for " .. ev.Seconds .. "s", ev.Seconds)
+		task.wait(ev.Seconds)
 		adminMult = 1
 		updateAllIncome()
 	elseif kind == "Rain" then
 		raining = true
 		beltOn = true
-		Remote:FireAllClients("banner", "RAINING BRAINROT! The belt is flooded for 10s", 10)
-		task.wait(10)
+		Remote:FireAllClients("banner", "RAINING BRAINROT! The belt is flooded for " .. ev.Seconds .. "s", ev.Seconds)
+		task.wait(ev.Seconds)
 		raining = false
 		beltOn = false
 	elseif kind == "BeltRush" then
 		beltOn = true
-		Remote:FireAllClients("banner", "BELT RUSH! Slops are rolling down the belt for 30s", 30)
-		task.wait(30)
+		Remote:FireAllClients(
+			"banner",
+			"BELT RUSH! Slops are rolling down the belt for " .. ev.Seconds .. "s",
+			ev.Seconds
+		)
+		task.wait(ev.Seconds)
 		beltOn = false
 	elseif kind == "LuckyBlock" then
 		for p in pairs(State) do
 			if p:FindFirstChild("leaderstats") then
-				local gift = math.max(100, math.floor(incomePerSec(p) * 60))
+				local gift = math.max(ev.MinCash, math.floor(incomePerSec(p) * ev.IncomeSeconds))
 				setCash(p, getCash(p) + gift)
 				notify(p, "Lucky Block! +$" .. Config.Format(gift))
 			end
@@ -2312,17 +2318,23 @@ end
 
 task.spawn(function()
 	while true do
-		task.wait(math.random(45, 90))
-		local r = math.random()
-		if r < 0.3 then
-			runEvent("AdminAbuse")
-		elseif r < 0.55 then
-			runEvent("Rain")
-		elseif r < 0.8 then
-			runEvent("BeltRush")
-		else
-			runEvent("LuckyBlock")
+		local evs = Config.Events
+		task.wait(math.random(evs.GapMin, evs.GapMax))
+		-- pick one event by weight (see Config.Events)
+		local total = 0
+		for _, kind in ipairs(evs.Order) do
+			total += evs[kind].Weight
 		end
+		local r = math.random() * total
+		local pick = evs.Order[#evs.Order]
+		for _, kind in ipairs(evs.Order) do
+			r -= evs[kind].Weight
+			if r < 0 then
+				pick = kind
+				break
+			end
+		end
+		runEvent(pick)
 	end
 end)
 

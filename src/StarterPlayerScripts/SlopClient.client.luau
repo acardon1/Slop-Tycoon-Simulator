@@ -78,7 +78,7 @@ refresh()
 -- LATER it opens a profile page or the Stats page (connect head.Activated then).
 -- Quick TP: the "BASE" pop-up under the HUD (shows when you are far from your plot)
 -- and the BASE button (bottom left) ask the server to move you to your own plot.
-local FAR_FROM_BASE = 60 -- studs from the plot centre before the pop-up shows
+local FAR_FROM_BASE = Config.FAR_FROM_BASE -- studs from the plot centre before the pop-up shows
 
 local head = Instance.new("ImageButton")
 head.AnchorPoint = Vector2.new(0, 0.5)

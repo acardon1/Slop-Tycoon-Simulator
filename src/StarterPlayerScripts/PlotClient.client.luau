@@ -59,11 +59,12 @@ end)
 ---------------------------------------------------------------------
 -- Drop boxes
 ---------------------------------------------------------------------
-local MAX_PER_TICK = 4 -- boxes per plot per drop; with more Slops their cash is merged
-local MAX_PER_PLOT = 30 -- caps on boxes shown at once (the cash is credited either way)
-local MAX_BOXES = 120
-local DRAW_RANGE = 300 -- plots farther than this from the camera draw no boxes
-local BOX_SIZE = 2 -- matches DROP_BOX in SlopServer
+-- The numbers live in SlopConfig (Config.Drops); the server uses the same BoxSize.
+local MAX_PER_TICK = Config.Drops.MaxPerTick -- boxes per plot per drop; with more Slops their cash is merged
+local MAX_PER_PLOT = Config.Drops.MaxPerPlot -- caps on boxes shown at once (the cash is credited either way)
+local MAX_BOXES = Config.Drops.MaxBoxes
+local DRAW_RANGE = Config.Drops.DrawRange -- plots farther than this from the camera draw no boxes
+local BOX_SIZE = Config.Drops.BoxSize
 
 local dropFolder = Instance.new("Folder")
 dropFolder.Name = "SlopDrops"
@@ -183,7 +184,7 @@ Remote.OnClientEvent:Connect(function(kind, drops)
 end)
 
 RunService.RenderStepped:Connect(function()
-	local speed = world:GetAttribute("DropSpeed") or 6
+	local speed = world:GetAttribute("DropSpeed") or Config.Drops.Speed
 	local now = os.clock()
 	for i = #boxes, 1, -1 do
 		local b = boxes[i]

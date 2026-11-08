@@ -241,7 +241,7 @@ row({
 header("Server events")
 row({
 	{
-		"Admin x5",
+		"Admin x" .. Config.Events.AdminAbuse.Mult,
 		COL.Red,
 		function()
 			call("event", "AdminAbuse")

@@ -29,7 +29,7 @@ Roadmap for setting up AI-assisted development on this repo. Work through the st
 
 Behaviour must stay the same: same numbers, only their home changes. Line numbers drift, so find each one by name or search.
 
-- [ ] **Batch 1: groups A + B + D** (one commit after a Studio play-test)
+- [x] **Batch 1: groups A + B + D** (one commit after a Studio play-test) *(done 2026-11-08, see the handoff log)*
 - [ ] **Batch 2: group C** (separate commit; check the layout in Studio with the MCP)
 
 **A. Gameplay (SlopServer)**
@@ -62,7 +62,7 @@ The event banners have "x5", "15s", "10s", "30s" typed into the text. Build that
 | slot machine lever | 18 |
 | slap block ClickDetector | 24 |
 | tank Sell prompt | 8 (hold 0.3s) |
-| belt Buy prompt | 12 (hold 0.4s) |
+| slot machine offer Buy prompt (the Slop in front of a reel; first listed here as the belt Buy prompt by mistake. The belt Buy prompt uses the default 14) | 12 (hold 0.4s) |
 | slot machine click (SlotClient) | 80 |
 
 **C. World and plot layout (SlopServer top, "Layout Settings" and below)**
@@ -223,3 +223,10 @@ At the end of each Claude Code session, add an entry: date, what was done, what 
 - **Changed:** `docs/ai-setup-plan.md` only (verify box, this entry). Committed with the earlier Step 2 files: `.mcp.json` and the `.gitignore` line for `.claude/settings.local.json`.
 - **Problems:** none. Only Edit mode was tested; Server/Client modes need a running play session (`start_stop_play`).
 - **Next:** Part 3 of the cleanup (move hardcoded tunables into `SlopConfig`, waiting for the owner's OK), then Step 3: skills.
+
+### 2026-11-08 (Part 3, batch 1)
+- **Done:** moved groups A, B and D into a new "GAMEPLAY TUNING" section of `SlopConfig` with the same numbers. Event banners and the DEV "Admin x5" button now build their text from `Config.Events`. Events are picked by weight (same 30/25/25/20 odds). `Config.SlotCost` uses `Config.START_SLOTS`. Server and PlotClient share `Config.Drops.BoxSize`.
+- **Changed:** `SlopConfig`, `SlopServer`, `PlotClient`, `SlopClient`, `SlotClient`, `DevClient`.
+- **Play-test (Studio MCP):** 8 plots; reach and hold values unchanged (lever 18, slap 24, default 14, tank Sell 8/0.3s, offer Buy 12/0.4s, reel click 80); Belt Rush, Admin Abuse and Lucky Block banners correct; Lucky Block paid about 60s of income; income tick about 1.0s; drop boxes size 2; BASE pop-up hidden at 55 studs, shown at 65. No new Output errors. Not tested: autosave (saving is off in a local file), Raining Brainrot.
+- **Problems:** the plan listed the 12/0.4s prompt as the belt Buy prompt; it is the slot machine offer Buy prompt (key named `OfferBuy`, table corrected). A repeated `rbxassetid://203785492 … Asset type does not match` warning in Output comes from the place or a model, not from `src/`; not looked into yet.
+- **Next:** batch 2 (group C, world and plot layout), checking the layout in Studio with the MCP.

@@ -79,6 +79,62 @@ Config.BUY_TO_INVENTORY = true
 Config.INV_MAX = 300 -- keeps saves small
 Config.TOKEN_RATE = 0.00002 -- 0.002% of cash earned this rebirth
 
+-- GAMEPLAY TUNING ----------------------------------------------------
+-- Moved here from the scripts (AI setup Part 3, batch 1). The numbers are the same as before.
+
+Config.BELT_SPEED = 10 -- studs per second the Slops move along the belt
+Config.START_SLOTS = 5 -- equip slots a new player starts with (also the base of Config.SlotCost)
+Config.MAX_SLOTS = 16
+Config.NUM_PLOTS = 8 -- plots per server (keep it even: half sit on each side of the belt)
+
+Config.AUTOSAVE_SECONDS = 60 -- every player is saved this often
+-- Seconds between income drops. Slop Income is cash per drop and the tank bars count down DropTime,
+-- so changing this also changes cash per second. Leave it at 1 unless you rebalance.
+Config.INCOME_TICK = 1
+Config.COLLECT_CHECK = 0.2 -- how often the server checks who is standing on a Collect pad
+
+-- Gap between Slops spawned on the belt: Min + up to Random extra seconds, or Raining while it rains
+Config.BeltSpawnGap = { Min = 1.7, Random = 0.5, Raining = 0.45 }
+
+-- Server events. A random event starts every GapMin-GapMax seconds.
+-- Weight = chance out of the total of all weights (30 + 25 + 25 + 20 = 100, so 30%, 25%, 25%, 20%).
+-- The banner text is built from these numbers, so it always matches.
+Config.Events = {
+	GapMin = 45,
+	GapMax = 90,
+	Order = { "AdminAbuse", "Rain", "BeltRush", "LuckyBlock" }, -- order the weights are checked in
+	AdminAbuse = { Weight = 30, Mult = 5, Seconds = 15 }, -- income x Mult
+	Rain = { Weight = 25, Seconds = 10 }, -- belt flooded with Slops
+	BeltRush = { Weight = 25, Seconds = 30 }, -- belt runs
+	LuckyBlock = { Weight = 20, MinCash = 100, IncomeSeconds = 60 }, -- gift = this many seconds of income
+}
+
+-- Slap payout: Base + IncomeShare x base income per second (boosts multiply the result)
+Config.Slap = { Base = 2, IncomeShare = 0.05 }
+
+-- How close a player must be (studs) to use a prompt or click, and how long to hold (seconds)
+Config.Reach = {
+	Default = 14, -- any prompt without its own value (the belt Buy and Rebirth prompts use this)
+	Lever = 18, -- slot machine lever
+	SlapBlock = 24,
+	TankSell = 8,
+	OfferBuy = 12, -- Buy prompt on the Slop shown in front of a slot machine reel
+	SlotClick = 80, -- clicking a reel (SlotClient)
+}
+Config.Hold = { TankSell = 0.3, OfferBuy = 0.4 }
+
+-- Factory drop boxes. The server times the cash with DropSpeed; PlotClient draws the boxes.
+Config.Drops = {
+	Speed = 6, -- studs per second along the conveyor
+	BoxSize = 2,
+	MaxPerTick = 4, -- boxes per plot per drop; with more Slops their cash is merged
+	MaxPerPlot = 30, -- caps on boxes shown at once (the cash is credited either way)
+	MaxBoxes = 120,
+	DrawRange = 300, -- plots farther than this from the camera draw no boxes
+}
+
+Config.FAR_FROM_BASE = 60 -- studs from your plot centre before the HUD's BASE pop-up shows
+
 -- Cash multiplier rolled for every new Slop: uniform x1.00 - x1.25
 Config.MULT_MIN, Config.MULT_MAX = 1, 1.25
 Config.MultTiers = {
@@ -177,7 +233,7 @@ function Config.SpeedUpgradeCost(l)
 	return math.floor(20 * 1.6 ^ l)
 end -- tokens
 function Config.SlotCost(slots)
-	return 25 * 2 ^ (slots - 5)
+	return 25 * 2 ^ (slots - Config.START_SLOTS)
 end -- tokens
 
 function Config.Mult(rebirths)

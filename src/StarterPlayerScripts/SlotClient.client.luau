@@ -302,7 +302,7 @@ local function setupMachine(model)
 		end
 
 		local cd = Instance.new("ClickDetector")
-		cd.MaxActivationDistance = 80
+		cd.MaxActivationDistance = Config.Reach.SlotClick
 		cd.Parent = reel
 		cd.MouseClick:Connect(function()
 			if model:GetAttribute("OwnerId") ~= player.UserId then
