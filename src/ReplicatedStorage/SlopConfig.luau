@@ -135,6 +135,48 @@ Config.Drops = {
 
 Config.FAR_FROM_BASE = 60 -- studs from your plot centre before the HUD's BASE pop-up shows
 
+-- WORLD AND PLOT LAYOUT (studs) ------------------------------------------
+-- Moved here from the top of SlopServer (AI setup Part 3, batch 2). The numbers are the same as before.
+-- SlopServer works out the rest from these (plot spacing, ceiling height, and so on).
+-- Changing a size moves things around the whole map, so check the layout in Studio after any change.
+Config.Layout = {
+	-- the map
+	PlotW = 56, -- plot width; size along the belt (x)
+	PlotD = 60, -- plot depth; size away from the belt (z)
+	PlotGap = 40, -- empty grass between neighbouring plots
+	Plaza = 14, -- curb + sidewalk depth between belt and plot
+	CurbW = 1,
+	BeltW = 8, -- width of the main belt
+	EdgePad = 50, -- ground padding past the outermost plots
+
+	-- office room on each plot (closed top) and its 4x4 grid of Slop tanks
+	RoomH = 16, -- floor to ceiling
+	DoorW = 16, -- doorway in the front wall, toward the belt
+	DoorH = 11,
+	TankPitch = 10, -- studs between tank centres
+	TankW = 6, -- glass footprint
+	TankBaseH = 3, -- console under the glass; its front holds the screen
+	TankGlassH = 8,
+
+	-- factory yard behind each room (open top), and the ATM in the room's back wall
+	FactoryD = 44, -- yard depth beyond the room's back wall
+	YardWallH = 7,
+	BackDoorW = 8,
+	BackDoorH = 10,
+	BackDoorDX = -14, -- back-wall doorway into the yard, x offset from the plot centre
+	AtmDX = 4, -- ATM and factory conveyor line up with the tank grid
+	AtmW = 8,
+	AtmH = 10,
+	AtmD = 6,
+	PadW = 12, -- Collect pad in front of the ATM
+	PadD = 6,
+	ConveyorY = 3, -- top of the factory conveyor (drop box size is Config.Drops.BoxSize)
+
+	-- slot machine reels
+	HexSide = 3, -- hexagon side length of each reel
+	ReelY = 7.75, -- reel centre height
+}
+
 -- Cash multiplier rolled for every new Slop: uniform x1.00 - x1.25
 Config.MULT_MIN, Config.MULT_MAX = 1, 1.25
 Config.MultTiers = {

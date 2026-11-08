@@ -25,7 +25,8 @@ Roblox tycoon game (Luau) with brainrot-style "Slop" characters. The owner is no
   - `stylua --check src`
 - All three pass on the current code (cleanup of 2026-11-08). Keep it that way: run `stylua src` to format before checking.
 - Lined-up tables in `SlopConfig` (`Rarities`, `Mons`, `DailyRewards`) sit between `-- stylua: ignore start` / `-- stylua: ignore end` so they keep one row per entry. Keep new rows lined up by hand.
-- **Config centralization:** move as much config as possible into the single shared config module, `src/ReplicatedStorage/SlopConfig.luau`. Tunable values (speeds, costs, timers, jump power, etc.) live there and are never hardcoded in scripts. Many constants are still hardcoded today (for example the top of `SlopServer` and `PlotClient`); move them when you touch that code.
+- **Config centralization:** move as much config as possible into the single shared config module, `src/ReplicatedStorage/SlopConfig.luau`. Tunable values (speeds, costs, timers, jump power, etc.) live there and are never hardcoded in scripts. Gameplay, reach, client and layout values were moved there in Part 3 of the cleanup (2026-11-08: "GAMEPLAY TUNING" and `Config.Layout`). Left in scripts on purpose: UI pixel sizes and tween times, values worked out from others, `DAY = 86400`, and the slot machine reel width/spacing (`REEL_W`, `REEL_STEP`, owner decision). Anything else hardcoded you find: move it when you touch that code.
+- The world is still built from parts in `SlopServer`, but a real map is coming soon to replace it, so don't spend effort polishing the procedural layout.
 - **Secrets:** never commit API keys or secrets. Put them in `.env` (gitignored) and read them from there.
 
 ## Code map

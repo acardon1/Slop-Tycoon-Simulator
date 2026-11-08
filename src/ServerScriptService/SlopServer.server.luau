@@ -34,14 +34,15 @@ local START_SLOTS = Config.START_SLOTS
 local MAX_SLOTS = Config.MAX_SLOTS
 local NUM_PLOTS = Config.NUM_PLOTS
 
--- Layout Settings
-local PLOT_W = 56 -- plot width; size along the belt (x)
-local PLOT_D = 60 -- plot depth; size away from the belt (z)
-local PLOT_GAP = 40 -- empty grass between neighboring plots
-local PLAZA = 14 -- curb + sidewalk depth between belt and plot
-local CURB_W = 1
-local BELT_W = 8 -- width of conveyor belt
-local EDGE_PAD = 50 -- baseplate padding past the outermost plots
+-- Layout Settings (the numbers live in SlopConfig, Config.Layout; the values below them are worked out here)
+local L = Config.Layout
+local PLOT_W = L.PlotW -- plot width; size along the belt (x)
+local PLOT_D = L.PlotD -- plot depth; size away from the belt (z)
+local PLOT_GAP = L.PlotGap -- empty grass between neighboring plots
+local PLAZA = L.Plaza -- curb + sidewalk depth between belt and plot
+local CURB_W = L.CurbW
+local BELT_W = L.BeltW -- width of conveyor belt
+local EDGE_PAD = L.EdgePad -- baseplate padding past the outermost plots
 local PER_SIDE = NUM_PLOTS / 2
 local PLOT_PITCH = PLOT_W + PLOT_GAP
 local PLOT_CZ = BELT_W / 2 + PLAZA + PLOT_D / 2 -- plot center distance from belt (38)
@@ -50,23 +51,23 @@ local PLOTS_HALF_WIDTH = PLOT_CZ + PLOT_D / 2 -- 58
 local BELT_HALF = PLOTS_HALF_LEN -- belt now spans every plot
 
 -- Office room on each plot (closed top) and its 4x4 grid of Slop tanks
-local ROOM_H = 16 -- floor to ceiling
+local ROOM_H = L.RoomH -- floor to ceiling
 local CEIL_Y = 0.5 + ROOM_H -- the floor's top is at y 0.5
-local DOOR_W, DOOR_H = 16, 11 -- doorway in the front wall, toward the belt
-local TANK_PITCH = 10 -- studs between tank centres
-local TANK_W = 6 -- glass footprint
-local TANK_BASE_H = 3 -- console under the glass; its front holds the screen
-local TANK_GLASS_H = 8
+local DOOR_W, DOOR_H = L.DoorW, L.DoorH -- doorway in the front wall, toward the belt
+local TANK_PITCH = L.TankPitch -- studs between tank centres
+local TANK_W = L.TankW -- glass footprint
+local TANK_BASE_H = L.TankBaseH -- console under the glass; its front holds the screen
+local TANK_GLASS_H = L.TankGlassH
 
 -- Factory yard behind each room (open top), and the ATM in the room's back wall
-local FACTORY_D = 44 -- yard depth beyond the room's back wall
-local YARD_WALL_H = 7
-local BACK_DOOR_W, BACK_DOOR_H = 8, 10
-local BACK_DOOR_DX = -14 -- back-wall doorway into the yard, x offset from the plot centre
-local ATM_DX = 4 -- ATM and conveyor line up with the tank grid
-local ATM_W, ATM_H, ATM_D = 8, 10, 6
-local PAD_W, PAD_D = 12, 6 -- Collect pad in front of the ATM
-local BELT_Y = 3 -- top of the factory conveyor
+local FACTORY_D = L.FactoryD -- yard depth beyond the room's back wall
+local YARD_WALL_H = L.YardWallH
+local BACK_DOOR_W, BACK_DOOR_H = L.BackDoorW, L.BackDoorH
+local BACK_DOOR_DX = L.BackDoorDX -- back-wall doorway into the yard, x offset from the plot centre
+local ATM_DX = L.AtmDX -- ATM and conveyor line up with the tank grid
+local ATM_W, ATM_H, ATM_D = L.AtmW, L.AtmH, L.AtmD
+local PAD_W, PAD_D = L.PadW, L.PadD -- Collect pad in front of the ATM
+local BELT_Y = L.ConveyorY -- top of the factory conveyor
 local DROP_SPEED = Config.Drops.Speed -- studs per second along the conveyor
 local DROP_BOX = Config.Drops.BoxSize -- drop box size (PlotClient draws the boxes)
 
@@ -835,9 +836,9 @@ end
 -- The client animates the reels; the server owns the parts and the attributes
 -- (Unlocked / Idx / Mult / Uid on each reel, Spin / OwnerId on the machine).
 local REEL_W, REEL_STEP = 3.2, 3.7
-local HEX_S = 3 -- hexagon side length
+local HEX_S = L.HexSide -- hexagon side length
 local HEX_A = HEX_S * math.sqrt(3) / 2 -- axis to the middle of a face
-local RY = 7.75 -- reel centre height
+local RY = L.ReelY -- reel centre height
 
 local function buildMachine(plot)
 	local n = Config.Slot.Reels

@@ -23,14 +23,14 @@ Roadmap for setting up AI-assisted development on this repo. Work through the st
 - [x] Add `.env` to `.gitignore` for API keys.
 - [x] Commit on branch `ai-setup` for partner review.
 - [x] Follow-up: clean up the existing code so selene and `stylua --check` pass (done 2026-11-08, see the handoff log).
-- [ ] Follow-up: move hardcoded tunable values from scripts into `SlopConfig` (Part 3 of the cleanup). List below, approved by the owner on 2026-11-08.
+- [x] Follow-up: move hardcoded tunable values from scripts into `SlopConfig` (Part 3 of the cleanup). List below, approved by the owner on 2026-11-08. *(done 2026-11-08, both batches)*
 
 ### Part 3: values to move into `SlopConfig`
 
 Behaviour must stay the same: same numbers, only their home changes. Line numbers drift, so find each one by name or search.
 
 - [x] **Batch 1: groups A + B + D** (one commit after a Studio play-test) *(done 2026-11-08, see the handoff log)*
-- [ ] **Batch 2: group C** (separate commit; check the layout in Studio with the MCP)
+- [x] **Batch 2: group C** (separate commit; check the layout in Studio with the MCP) *(done 2026-11-08; the reel width/spacing `REEL_W`, `REEL_STEP` stay in `SlopServer`, owner decision)*
 
 **A. Gameplay (SlopServer)**
 
@@ -230,3 +230,10 @@ At the end of each Claude Code session, add an entry: date, what was done, what 
 - **Play-test (Studio MCP):** 8 plots; reach and hold values unchanged (lever 18, slap 24, default 14, tank Sell 8/0.3s, offer Buy 12/0.4s, reel click 80); Belt Rush, Admin Abuse and Lucky Block banners correct; Lucky Block paid about 60s of income; income tick about 1.0s; drop boxes size 2; BASE pop-up hidden at 55 studs, shown at 65. No new Output errors. Not tested: autosave (saving is off in a local file), Raining Brainrot.
 - **Problems:** the plan listed the 12/0.4s prompt as the belt Buy prompt; it is the slot machine offer Buy prompt (key named `OfferBuy`, table corrected). A repeated `rbxassetid://203785492 … Asset type does not match` warning in Output comes from the place or a model, not from `src/`; not looked into yet.
 - **Next:** batch 2 (group C, world and plot layout), checking the layout in Studio with the MCP.
+
+### 2026-11-08 (Part 3, batch 2)
+- **Done:** moved group C into `Config.Layout` with the same numbers; `SlopServer` keeps its own names (`PLOT_W`, `ROOM_H`, ...) read from it, and values worked out from them stay in the script. Part 3 is finished.
+- **Changed:** `SlopConfig`, `SlopServer`, `CLAUDE.md` (config note updated, map note added).
+- **Layout check (Studio MCP):** fingerprint of every part's name, position and size before and after: 771 parts, hash `1773248259` both times; 61 world GUIs both times; same conveyor paths on all 8 plots. No new Output errors.
+- **Owner decisions:** the reel width/spacing (`REEL_W`, `REEL_STEP`) stay in `SlopServer`. A real map is coming soon to replace the procedural parts, so the layout values are short-lived; don't spend effort polishing them.
+- **Next:** Step 3, skills (Coding skill first).
