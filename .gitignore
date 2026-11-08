@@ -10,6 +10,9 @@ sourcemap.json
 # Place files (scripts and models live in src/)
 /*.rbxl
 
+# Personal Claude Code settings (each developer approves MCP servers for themselves)
+.claude/settings.local.json
+
 # API keys and secrets: never commit
 .env
 .env.*

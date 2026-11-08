@@ -27,9 +27,16 @@ Roadmap for setting up AI-assisted development on this repo. Work through the st
 
 ## Step 2: Roblox Studio MCP
 
-- [ ] Install and connect the Roblox Studio MCP server so Claude can read the place, run scripts, and raycast inside Studio.
-- [ ] Verify Claude can run a test command in Studio.
+- [x] Install and connect the Roblox Studio MCP server so Claude can read the place, run scripts, and raycast inside Studio.
+- [x] Verify Claude can run a test command in Studio. *(Verified 2026-11-08: `execute_luau` in Edit mode returned the Workspace child count.)*
 - Required for the map measurements and UI preview screenshots.
+
+**How it's set up:** Studio has a built-in MCP server ([Roblox docs](https://create.roblox.com/docs/en-us/studio/mcp)); the old standalone `studio-rust-mcp-server` is retired, don't use it. The repo's `.mcp.json` registers it for Claude Code as `Roblox_Studio`, using the same command Studio's MCP panel shows. Each developer, once:
+1. In Studio: **Assistant** > **…** > **Manage MCP Servers** > turn on **Enable Studio as MCP server**.
+2. Approve the `Roblox_Studio` server when Claude Code asks (or add `"enabledMcpjsonServers": ["Roblox_Studio"]` to `.claude/settings.local.json`, which is gitignored).
+3. Start a new Claude Code session; MCP tools load only at session start. Studio's MCP panel shows a green dot when a client is connected.
+
+Useful tools it gives: `execute_luau` (run code in Edit, Server or Client), `start_stop_play`, `get_console_output`, `screen_capture`, `search_game_tree`, `inspect_instance`, `character_navigation`. It can also edit scripts in Studio (`multi_edit`); **don't use that here**, since scripts live in `src/` and Rojo would overwrite Studio edits.
 
 ## Step 3: Skills (rules Claude follows automatically)
 
@@ -148,3 +155,15 @@ At the end of each Claude Code session, add an entry: date, what was done, what 
 - **Changed:** all 9 scripts in `src/`. `SlopConfig` keeps `Rarities`, `Mons` and `DailyRewards` one row per entry with `-- stylua: ignore` markers. 11 `UDim2.new` calls became `fromScale`/`fromOffset`; removed unused `fetchedAt` (MenuClient) and the unused `beltEdgeA1`/`beltEdgeB1` names (SlopServer; the belt edges are still built). CLAUDE.md status note updated.
 - **Problems:** needs a Studio play-test before commit. Git Bash `sed -i` strips CRLF line endings; run `stylua src` afterwards to restore them.
 - **Next:** Part 3, moving hardcoded tunables into `SlopConfig`, then Step 2: Roblox Studio MCP.
+
+### 2026-11-08 (Step 2)
+- **Done:** connected Roblox Studio's built-in MCP server to Claude Code. `claude mcp list` shows `Roblox_Studio ✔ Connected`.
+- **Changed:** added `.mcp.json` (shared server config); `.gitignore` now ignores `.claude/settings.local.json` (personal approval of the server).
+- **Problems:** the session that set it up can't use the tools (they load at session start), so the Studio test command is not verified yet.
+- **Next:** in a new session with Studio open and the MCP server enabled, run a test command (e.g. `execute_luau` printing the workspace children count), tick the verify box, commit. Then Part 3: move hardcoded values into `SlopConfig` (the list is ready, waiting for the owner's OK).
+
+### 2026-11-08 (Step 2 verified)
+- **Done:** verified the Studio MCP from a fresh session. `list_roblox_studios` found one Studio (`SlopTycoon`); `execute_luau` in the Edit data model returned `Workspace children: 2, place: SlopTycoon`. Ticked the verify box and committed Step 2 on `ai-setup` (not pushed).
+- **Changed:** `docs/ai-setup-plan.md` only (verify box, this entry). Committed with the earlier Step 2 files: `.mcp.json` and the `.gitignore` line for `.claude/settings.local.json`.
+- **Problems:** none. Only Edit mode was tested; Server/Client modes need a running play session (`start_stop_play`).
+- **Next:** Part 3 of the cleanup (move hardcoded tunables into `SlopConfig`, waiting for the owner's OK), then Step 3: skills.
