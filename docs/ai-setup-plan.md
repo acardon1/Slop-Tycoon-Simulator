@@ -4,7 +4,7 @@ Roadmap for setting up AI-assisted development on this repo. Work through the st
 
 **Shared vs. personal:** Steps 1–5 are shared setup for all developers. Step 6 (local 3D generation) is optional and for the project owner only. Don't include it in setup instructions for other developers.
 
-**How to use this file (for Claude Code):** Read this before starting setup work. When you finish a task, tick its box, and add an entry to the **Handoff log** at the bottom.
+**How to use this file (for Claude Code):** Read this before starting setup work. When you finish a task, tick its box, and add an entry to the **Handoff log** at the bottom. This file and its Handoff log are only for the AI setup process. Once the setup is finished, handoff notes go in the **Progress log** in `CLAUDE.md` instead.
 
 ## Environment
 
@@ -98,14 +98,14 @@ Useful tools it gives: `execute_luau` (run code in Edit, Server or Client), `sta
 
 Skills live in the repo (`.claude/skills/`) so both developers get them.
 
-### Coding skill (TO MAKE)
+### Coding skill (made: `.claude/skills/coding/SKILL.md`)
 
 Every coding task must pass these checks, at minimum, before it counts as done:
 
-- [ ] **Rojo build:** `rojo build` succeeds
-- [ ] **Linter:** `selene` passes
-- [ ] **Formatter:** `stylua --check` passes
-- [ ] **Config centralization:** move as much config as possible into the single config file in the code. Tunable values (speeds, costs, timers, jump power, etc.) live there and are never hardcoded in scripts.
+- [x] **Rojo build:** `rojo build` succeeds
+- [x] **Linter:** `selene` passes
+- [x] **Formatter:** `stylua --check` passes
+- [x] **Config centralization:** move as much config as possible into the single config file in the code. Tunable values (speeds, costs, timers, jump power, etc.) live there and are never hardcoded in scripts.
 
 ### UI skill (TO MAKE)
 
@@ -237,3 +237,9 @@ At the end of each Claude Code session, add an entry: date, what was done, what 
 - **Layout check (Studio MCP):** fingerprint of every part's name, position and size before and after: 771 parts, hash `1773248259` both times; 61 world GUIs both times; same conveyor paths on all 8 plots. No new Output errors.
 - **Owner decisions:** the reel width/spacing (`REEL_W`, `REEL_STEP`) stay in `SlopServer`. A real map is coming soon to replace the procedural parts, so the layout values are short-lived; don't spend effort polishing them.
 - **Next:** Step 3, skills (Coding skill first).
+
+### 2026-11-08 (Step 3, Coding skill)
+- **Done:** wrote the Coding skill. Claude Code lists it as `coding` (it loaded in the same session). It covers: read before editing and only edit `src/`; config centralization (what goes in `SlopConfig`, what may stay in scripts); style rules; the three checks in one command; the Studio MCP play-test method used for Part 3 (sync check, server/client tests, before/after fingerprint, Output log); report, then commit after the owner confirms.
+- **Changed:** added `.claude/skills/coding/SKILL.md`; ticked the Coding skill boxes above. Owner rule added to the skill and to "How to use this file": this Handoff log is only for the setup; once setup is finished, notes go in the Progress log in `CLAUDE.md`.
+- **Problems:** none.
+- **Next:** the rest of Step 3. Map audit skill (best once the real map is in Studio) and UI skill (needs owner decisions first, e.g. minimum text size and shadow/outline values).
