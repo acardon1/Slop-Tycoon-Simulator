@@ -9,3 +9,7 @@ sourcemap.json
 
 # Place files (scripts and models live in src/)
 /*.rbxl
+
+# API keys and secrets: never commit
+.env
+.env.*

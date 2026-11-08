@@ -1,0 +1,11 @@
+# StyLua formatter settings: https://github.com/JohnnyMorganz/StyLua
+# Matches the existing code: tabs and double quotes.
+column_width = 120
+indent_type = "Tabs"
+indent_width = 4
+quote_style = "AutoPreferDouble"
+call_parentheses = "Always"
+# Windows line endings: both developers are on Windows and git has core.autocrlf on,
+# so files on disk are CRLF (git still stores them as LF).
+# To reverse: set this to "Unix" if a developer works with LF files on disk.
+line_endings = "Windows"

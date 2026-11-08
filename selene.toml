@@ -1,0 +1,3 @@
+# selene linter settings: https://kampfkarren.github.io/selene/
+# "roblox" teaches selene the Roblox globals (game, workspace, Instance, Vector3, task...).
+std = "roblox"

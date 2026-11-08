@@ -15,6 +15,18 @@ Roblox tycoon game (Luau) with brainrot-style "Slop" characters. The owner is no
 - Use tabs for indentation. Keep new code consistent with the file it goes in.
 - Art is the owner's: you write the code that places and uses assets; you do not generate final art or real 3D meshes.
 
+## AI setup and checks
+
+- Read `docs/ai-setup-plan.md` for the project's AI setup roadmap and skill rules.
+- Tools are pinned in `rokit.toml` (rojo, selene, stylua). Run `rokit install` after cloning or when `rokit.toml` changes.
+- **Before calling any code task done, all three must pass:**
+  - `rojo build -o build-check.rbxl` (the root `*.rbxl` is gitignored)
+  - `selene src`
+  - `stylua --check src`
+- **Current status (2026-11-08):** the existing code does not pass yet (selene: 61 warnings, 0 errors; stylua: every script would be reformatted). Until the owner approves a cleanup, a task counts as done if it adds no new selene warnings and its new or changed code is stylua-formatted. Remove this note once the cleanup lands.
+- **Config centralization:** move as much config as possible into the single shared config module, `src/ReplicatedStorage/SlopConfig.luau`. Tunable values (speeds, costs, timers, jump power, etc.) live there and are never hardcoded in scripts. Many constants are still hardcoded today (for example the top of `SlopServer` and `PlotClient`); move them when you touch that code.
+- **Secrets:** never commit API keys or secrets. Put them in `.env` (gitignored) and read them from there.
+
 ## Code map
 
 - `SlopServer.server.luau` (Script): builds the whole world procedurally (ground, belt, sidewalk, 8 plots with gap 40, slot machines, slap and rebirth blocks), handles saving (DataStore `SlopTycoonV1`, `DATA_VERSION` 3), rolls, buying, badges, daily rewards, passes and products, income tick, belt events.
