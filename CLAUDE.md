@@ -29,6 +29,13 @@ Roblox tycoon game (Luau) with brainrot-style "Slop" characters. The owner is no
 - The world is still built from parts in `SlopServer`, but a real map is coming soon to replace it, so don't spend effort polishing the procedural layout.
 - **Secrets:** never commit API keys or secrets. Put them in `.env` (gitignored) and read them from there.
 
+## Image folders
+
+None of these are synced into the game by Rojo.
+
+- `reference/`: the owner's local inspiration pictures, in `reference/models/`, `reference/map/` and `reference/ui/`. Begin any model, map area or UI design from the matching folder. Use the images freely, with no need to ask; they are the starting point, not the final word. Inspiration only: never copy someone else's art into the game or upload a reference image to Roblox.
+- `ui/`: the game's own UI pictures, in `ui/base/` (bare screens and pieces), `ui/icons/` (the icon set) and `ui/previews/` (preview images for review).
+
 ## Code map
 
 - `SlopServer.server.luau` (Script): builds the whole world procedurally (ground, belt, sidewalk, 8 plots with gap 40, slot machines, slap and rebirth blocks), handles saving (DataStore `SlopTycoonV1`, `DATA_VERSION` 3), rolls, buying, badges, daily rewards, passes and products, income tick, belt events.

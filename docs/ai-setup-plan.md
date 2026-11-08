@@ -98,6 +98,8 @@ Useful tools it gives: `execute_luau` (run code in Edit, Server or Client), `sta
 
 Skills live in the repo (`.claude/skills/`) so both developers get them.
 
+**Reference images:** the owner's local inspiration pictures live in `reference/models/`, `reference/map/` and `reference/ui/`. The UI and Map audit skills begin designs from the matching folder and use the images freely, as a starting point rather than the final word. They are for inspiration only and never go into the game.
+
 ### Coding skill (made: `.claude/skills/coding/SKILL.md`)
 
 Every coding task must pass these checks, at minimum, before it counts as done:
@@ -107,23 +109,25 @@ Every coding task must pass these checks, at minimum, before it counts as done:
 - [x] **Formatter:** `stylua --check` passes
 - [x] **Config centralization:** move as much config as possible into the single config file in the code. Tunable values (speeds, costs, timers, jump power, etc.) live there and are never hardcoded in scripts.
 
-### UI skill (TO MAKE)
+### UI skill (made: `.claude/skills/ui/SKILL.md`)
 
 - When UI is suggested, show a **preview image**.
-- Create the actual UI file somewhere in the codebase so it can be uploaded later.
+- Create the actual UI file somewhere in the codebase so it can be uploaded later. **Decided:** UI is built from base images and a set of icons, kept as pictures in `ui/base/` and `ui/icons/`; scripts place them in the game.
 - Show the part of the script that builds the UI, with comments.
 - **Depth stack** for UI elements:
   - Shadow below each element, shifted slightly blue
   - Gradient on the face
-  - Lift from the top
-  - Outline the same thickness everywhere
+  - Lift from the top. **Decided:** a thin lighter strip along the top edge.
+  - Outline the same thickness everywhere. **Decided:** 3 px.
 - **Test resolutions:** phone, Full HD (1920×1080), 4K, and 4:3.
 - Buttons big enough for thumbs.
 - No UI elements touch each other.
 - Anything meant to be centered is measured to within 1.5 px.
-- Text must never shrink below a readable minimum size.
+- Text must never shrink below a readable minimum size. **Decided:** 14 px at phone resolution.
 
-### Map audit skill (TO MAKE)
+### Map audit skill (made: `.claude/skills/map-audit/SKILL.md`)
+
+The boxes below are the checks the skill runs on a map, so they stay unticked here.
 
 A map is a real 3D space players move through, not just a pile of parts. Questions to answer: How do you get there? How do you get back? Can you cross certain gaps? How long do you fall?
 
@@ -243,3 +247,10 @@ At the end of each Claude Code session, add an entry: date, what was done, what 
 - **Changed:** added `.claude/skills/coding/SKILL.md`; ticked the Coding skill boxes above. Owner rule added to the skill and to "How to use this file": this Handoff log is only for the setup; once setup is finished, notes go in the Progress log in `CLAUDE.md`.
 - **Problems:** none.
 - **Next:** the rest of Step 3. Map audit skill (best once the real map is in Studio) and UI skill (needs owner decisions first, e.g. minimum text size and shadow/outline values).
+
+### 2026-11-08 (Step 3, UI and Map audit skills)
+- **Done:** wrote the UI and Map audit skills, finishing Step 3. Owner decisions: 14 px minimum text at phone size, a light strip along the top as the lift, 3 px outlines everywhere, UI built from local base images and an icon set. Reference images are the starting point for designs and are used freely.
+- **Changed:** added `.claude/skills/ui/SKILL.md`, `.claude/skills/map-audit/SKILL.md`, and the folders `reference/{models,map,ui}` and `ui/{base,icons,previews}` (`.gitkeep` files hold them in git); `CLAUDE.md` has a new "Image folders" section.
+- **Tested in Studio (MCP):** UI measuring in test frames at the four resolutions; `screen_capture` during play; calculated jump (7.20 studs, 0.542s) against a real one (7.31, 0.55s); raycasts and sight-line fan; `character_navigation` walked through the plot door; overlap check (717 pairs across 435 solid parts, mostly by design).
+- **Problems:** neither skill has run on a real task yet. UI measuring can't fake the screen size for code that reads the real viewport (`UI.makeWindow`'s `UIScale`). Several thresholds are marked *(starting value)* and weren't chosen by the owner. `reference/models/` has no skill yet; only the CLAUDE.md rule covers it.
+- **Next:** Step 4, image generation and upload.
