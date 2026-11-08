@@ -13,14 +13,18 @@ local RS = game:GetService("ReplicatedStorage")
 local Config = require(RS:WaitForChild("SlopConfig"))
 local Remote = RS:WaitForChild("SlopEvent")
 local world = workspace:WaitForChild("SlopOverWorld")
-local tanks = {}   -- [tank model] = { Fill = frame, Timer = label }
+local tanks = {} -- [tank model] = { Fill = frame, Timer = label }
 
 local function track(tank)
-	if not tank:GetAttribute("DropTime") then return end   -- empty spot: nothing to count down
+	if not tank:GetAttribute("DropTime") then
+		return
+	end -- empty spot: nothing to count down
 	local screen = tank:WaitForChild("Screen", 5)
 	local sg = screen and screen:WaitForChild("Gui", 5)
 	local bar = sg and sg:WaitForChild("Bar", 5)
-	if not bar or not tank.Parent then return end
+	if not bar or not tank.Parent then
+		return
+	end
 	tanks[tank] = { Fill = bar:WaitForChild("Fill"), Timer = bar:WaitForChild("Timer") }
 end
 
@@ -36,7 +40,9 @@ end
 
 RunService.RenderStepped:Connect(function()
 	local lastTick = world:GetAttribute("IncomeTick")
-	if not lastTick then return end
+	if not lastTick then
+		return
+	end
 	local since = workspace:GetServerTimeNow() - lastTick
 	for tank, ui in pairs(tanks) do
 		if tank.Parent then
@@ -53,28 +59,32 @@ end)
 ---------------------------------------------------------------------
 -- Drop boxes
 ---------------------------------------------------------------------
-local MAX_PER_TICK = 4     -- boxes per plot per drop; with more Slops their cash is merged
-local MAX_PER_PLOT = 30    -- caps on boxes shown at once (the cash is credited either way)
+local MAX_PER_TICK = 4 -- boxes per plot per drop; with more Slops their cash is merged
+local MAX_PER_PLOT = 30 -- caps on boxes shown at once (the cash is credited either way)
 local MAX_BOXES = 120
-local DRAW_RANGE = 300     -- plots farther than this from the camera draw no boxes
-local BOX_SIZE = 2         -- matches DROP_BOX in SlopServer
+local DRAW_RANGE = 300 -- plots farther than this from the camera draw no boxes
+local BOX_SIZE = 2 -- matches DROP_BOX in SlopServer
 
 local dropFolder = Instance.new("Folder")
 dropFolder.Name = "SlopDrops"
 dropFolder.Parent = workspace
 
-local boxes = {}           -- { Part, Path, Born, Plot }
-local perPlot = {}         -- [plot index] = boxes showing
+local boxes = {} -- { Part, Path, Born, Plot }
+local perPlot = {} -- [plot index] = boxes showing
 
 -- conveyor waypoints, from the plot folder's Path1..PathN attributes
 local function getPath(plotIndex)
 	local pf = world:FindFirstChild("Plot" .. plotIndex)
 	local n = pf and pf:GetAttribute("PathN")
-	if not n then return nil end
+	if not n then
+		return nil
+	end
 	local pts = {}
 	for i = 1, n do
 		pts[i] = pf:GetAttribute("Path" .. i)
-		if not pts[i] then return nil end
+		if not pts[i] then
+			return nil
+		end
 	end
 	return pts
 end
@@ -139,7 +149,9 @@ local function makeBox(value)
 end
 
 local function spawnBox(plotIndex, path, value)
-	if #boxes >= MAX_BOXES or (perPlot[plotIndex] or 0) >= MAX_PER_PLOT then return end
+	if #boxes >= MAX_BOXES or (perPlot[plotIndex] or 0) >= MAX_PER_PLOT then
+		return
+	end
 	local part = makeBox(value)
 	part.Position = path[1]
 	part.Parent = dropFolder
@@ -149,7 +161,9 @@ end
 
 -- each drop: one value per Slop; merged into at most MAX_PER_TICK boxes spread over the second
 Remote.OnClientEvent:Connect(function(kind, drops)
-	if kind ~= "drops" then return end
+	if kind ~= "drops" then
+		return
+	end
 	local cam = workspace.CurrentCamera
 	for _, d in ipairs(drops) do
 		local path = getPath(d.P)

@@ -28,7 +28,7 @@ end
 ---------------------------------------------------------------------
 -- Reels (3 visible faces: 1 = upper, 2 = middle, 3 = lower)
 ---------------------------------------------------------------------
-local spinning = {}                  -- set of reels currently animating
+local spinning = {} -- set of reels currently animating
 
 local function paint(R)
 	local reel = R.reel
@@ -58,7 +58,9 @@ local function buildReel(reel, j)
 	local faces = {}
 	for f = 1, 3 do
 		local part = reel:WaitForChild("Face" .. f, 10)
-		if not part then return nil end
+		if not part then
+			return nil
+		end
 		local sg = Instance.new("SurfaceGui")
 		sg.Face = Enum.NormalId.Right
 		sg.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
@@ -82,9 +84,13 @@ local function buildReel(reel, j)
 		faces[f] = { part = part, label = t }
 	end
 	local R = {
-		reel = reel, j = j, faces = faces,
+		reel = reel,
+		j = j,
+		faces = faces,
 		syms = { randomEmoji(), "❔", randomEmoji() },
-		spinning = false, stopAt = 0, nextTick = 0,
+		spinning = false,
+		stopAt = 0,
+		nextTick = 0,
 	}
 	paint(R)
 	return R
@@ -115,10 +121,10 @@ RunService.RenderStepped:Connect(function()
 		elseif now >= R.stopAt then
 			spinning[R] = nil
 			R.spinning = false
-			paint(R)                         -- lands on whatever the server rolled
+			paint(R) -- lands on whatever the server rolled
 		elseif now >= R.nextTick then
 			R.nextTick = now + Config.Slot.TickTime
-			R.syms[3], R.syms[2], R.syms[1] = R.syms[2], R.syms[1], randomEmoji()   -- drum turns downward
+			R.syms[3], R.syms[2], R.syms[1] = R.syms[2], R.syms[1], randomEmoji() -- drum turns downward
 			for f = 1, 3 do
 				R.faces[f].label.Text = R.syms[f]
 			end
@@ -155,13 +161,13 @@ end
 fit()
 workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit)
 
-local pEmoji  = label(panel, "", UDim2.fromOffset(180, 70), UDim2.fromOffset(60, 8), WHITE)
-local pName   = label(panel, "", UDim2.fromOffset(276, 34), UDim2.fromOffset(12, 80), WHITE, true)
+local pEmoji = label(panel, "", UDim2.fromOffset(180, 70), UDim2.fromOffset(60, 8), WHITE)
+local pName = label(panel, "", UDim2.fromOffset(276, 34), UDim2.fromOffset(12, 80), WHITE, true)
 local pRarity = label(panel, "", UDim2.fromOffset(276, 24), UDim2.fromOffset(12, 114), WHITE, true)
-local pTier   = label(panel, "", UDim2.fromOffset(276, 24), UDim2.fromOffset(12, 140), WHITE, true)
+local pTier = label(panel, "", UDim2.fromOffset(276, 24), UDim2.fromOffset(12, 140), WHITE, true)
 local pIncome = label(panel, "", UDim2.fromOffset(276, 24), UDim2.fromOffset(12, 168), GREEN_TEXT, true)
-local pCost   = label(panel, "", UDim2.fromOffset(276, 24), UDim2.fromOffset(12, 194), COL.Text)
-local pType   = label(panel, "", UDim2.fromOffset(276, 20), UDim2.fromOffset(12, 220), COL.Text)
+local pCost = label(panel, "", UDim2.fromOffset(276, 24), UDim2.fromOffset(12, 194), COL.Text)
+local pType = label(panel, "", UDim2.fromOffset(276, 20), UDim2.fromOffset(12, 220), COL.Text)
 local buy = UI.button(panel, "", UDim2.fromOffset(268, 54), UDim2.fromOffset(16, 254), COL.Green)
 
 local panelX = Instance.new("TextButton")
@@ -176,16 +182,22 @@ panelX.Parent = panel
 corner(panelX, UDim.new(1, 0))
 stroke(panelX, 3)
 
-local current = nil                  -- { reel = model, uid = offer Uid }
+local current = nil -- { reel = model, uid = offer Uid }
 local busy = false
 
 -- the Slop currently on the selected reel, or nil if it was bought / replaced by a new pull
 local function currentOffer()
-	if not current then return nil end
+	if not current then
+		return nil
+	end
 	local reel = current.reel
-	if reel:GetAttribute("Uid") ~= current.uid then return nil end
+	if reel:GetAttribute("Uid") ~= current.uid then
+		return nil
+	end
 	local m = Config.Mons[reel:GetAttribute("Idx") or 0]
-	if not m then return nil end
+	if not m then
+		return nil
+	end
 	return m, reel:GetAttribute("Mult") or 1
 end
 
@@ -213,7 +225,9 @@ local function updatePanel()
 end
 
 cash.Changed:Connect(function()
-	if current then updatePanel() end
+	if current then
+		updatePanel()
+	end
 end)
 
 panelX.Activated:Connect(function()
@@ -222,7 +236,9 @@ panelX.Activated:Connect(function()
 end)
 
 buy.Activated:Connect(function()
-	if not current or busy or not currentOffer() then return end
+	if not current or busy or not currentOffer() then
+		return
+	end
 	busy = true
 	pcall(function()
 		Menu:InvokeServer("buyOffer", current and current.uid)
@@ -234,13 +250,15 @@ end)
 ---------------------------------------------------------------------
 -- Machines (they stream in and out with StreamingEnabled)
 ---------------------------------------------------------------------
-local machines = {}                  -- [model] = machine
+local machines = {} -- [model] = machine
 
 local function updatePrompts(machine)
 	local mine = machine.model:GetAttribute("OwnerId") == player.UserId
 	local knob = machine.model:FindFirstChild("LeverKnob")
 	local lever = knob and knob:FindFirstChildOfClass("ProximityPrompt")
-	if lever then lever.Enabled = mine end
+	if lever then
+		lever.Enabled = mine
+	end
 	if machine.offers then
 		for _, d in ipairs(machine.offers:GetDescendants()) do
 			if d:IsA("ProximityPrompt") then
@@ -251,7 +269,9 @@ local function updatePrompts(machine)
 end
 
 local function setupMachine(model)
-	if machines[model] then return end
+	if machines[model] then
+		return
+	end
 	local machine = { model = model, reels = {} }
 	machines[model] = machine
 
@@ -270,8 +290,12 @@ local function setupMachine(model)
 		machine.reels[j] = R
 
 		local function onChanged()
-			if not R.spinning then paint(R) end
-			if current and current.reel == reel then updatePanel() end
+			if not R.spinning then
+				paint(R)
+			end
+			if current and current.reel == reel then
+				updatePanel()
+			end
 		end
 		for _, a in ipairs({ "Unlocked", "Idx", "Mult", "Uid" }) do
 			reel:GetAttributeChangedSignal(a):Connect(onChanged)
@@ -281,9 +305,15 @@ local function setupMachine(model)
 		cd.MaxActivationDistance = 80
 		cd.Parent = reel
 		cd.MouseClick:Connect(function()
-			if model:GetAttribute("OwnerId") ~= player.UserId then return end   -- only your own machine
-			if R.spinning then return end
-			if (reel:GetAttribute("Idx") or 0) == 0 then return end
+			if model:GetAttribute("OwnerId") ~= player.UserId then
+				return
+			end -- only your own machine
+			if R.spinning then
+				return
+			end
+			if (reel:GetAttribute("Idx") or 0) == 0 then
+				return
+			end
 			current = { reel = reel, uid = reel:GetAttribute("Uid") }
 			updatePanel()
 		end)

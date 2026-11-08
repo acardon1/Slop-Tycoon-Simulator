@@ -22,7 +22,8 @@ Roadmap for setting up AI-assisted development on this repo. Work through the st
 - [x] Create `CLAUDE.md` with the core rules (see the Coding skill below). *(CLAUDE.md already existed; the rules were added as a new "AI setup and checks" section.)*
 - [x] Add `.env` to `.gitignore` for API keys.
 - [x] Commit on branch `ai-setup` for partner review.
-- [ ] Follow-up: decide on cleaning up the existing code so selene and `stylua --check` pass (see the 2026-11-08 handoff entry).
+- [x] Follow-up: clean up the existing code so selene and `stylua --check` pass (done 2026-11-08, see the handoff log).
+- [ ] Follow-up: move hardcoded tunable values from scripts into `SlopConfig` (Part 3 of the cleanup).
 
 ## Step 2: Roblox Studio MCP
 
@@ -141,3 +142,9 @@ At the end of each Claude Code session, add an entry: date, what was done, what 
 - **Check results:** `rojo build` passes. `selene src`: 0 errors, 61 warnings (47 several statements on one line, 11 `UDim2.new` that could be `fromScale`/`fromOffset`, 3 unused variables: `fetchedAt` in MenuClient, `beltEdgeA1`/`beltEdgeB1` in SlopServer). `stylua --check src`: fails on all 9 scripts, mostly because it removes the lined-up spacing in tables like `Config.Mons`. PlotClient shows the most because its file uses LF line endings, unlike the others.
 - **Problems:** no code was reformatted or fixed (waiting for the owner's OK). About 35 tunable constants are still hardcoded in scripts instead of `SlopConfig`. Partner needs to install Rokit and run `rokit install`.
 - **Next:** owner decides on the cleanup (format all files, fix or silence the selene warnings), then Step 2: Roblox Studio MCP.
+
+### 2026-11-08 (cleanup)
+- **Done:** formatted every script with StyLua and fixed all selene warnings. `rojo build`, `selene src` (0 warnings) and `stylua --check src` all pass. Behaviour is meant to be unchanged.
+- **Changed:** all 9 scripts in `src/`. `SlopConfig` keeps `Rarities`, `Mons` and `DailyRewards` one row per entry with `-- stylua: ignore` markers. 11 `UDim2.new` calls became `fromScale`/`fromOffset`; removed unused `fetchedAt` (MenuClient) and the unused `beltEdgeA1`/`beltEdgeB1` names (SlopServer; the belt edges are still built). CLAUDE.md status note updated.
+- **Problems:** needs a Studio play-test before commit. Git Bash `sed -i` strips CRLF line endings; run `stylua src` afterwards to restore them.
+- **Next:** Part 3, moving hardcoded tunables into `SlopConfig`, then Step 2: Roblox Studio MCP.

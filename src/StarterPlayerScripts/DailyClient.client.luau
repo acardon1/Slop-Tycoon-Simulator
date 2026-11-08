@@ -9,13 +9,13 @@ local DailyRF = RS:WaitForChild("SlopDaily")
 local player = Players.LocalPlayer
 
 local COL = {
-	Panel   = Color3.fromRGB(236, 236, 238),
+	Panel = Color3.fromRGB(236, 236, 238),
 	Outline = Color3.fromRGB(40, 42, 48),
-	Green   = Color3.fromRGB(86, 176, 96),
-	Text    = Color3.fromRGB(70, 70, 76),
-	Red     = Color3.fromRGB(232, 72, 63),
-	Gray    = Color3.fromRGB(150, 150, 158),
-	Locked  = Color3.fromRGB(176, 176, 183),
+	Green = Color3.fromRGB(86, 176, 96),
+	Text = Color3.fromRGB(70, 70, 76),
+	Red = Color3.fromRGB(232, 72, 63),
+	Gray = Color3.fromRGB(150, 150, 158),
+	Locked = Color3.fromRGB(176, 176, 183),
 }
 local SHAPE_COLORS = {
 	Cash = Color3.fromRGB(120, 220, 130),
@@ -81,7 +81,8 @@ local function makeWindow(gui, title, width, height)
 	fit()
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit)
 
-	local titleLabel = label(win, title, UDim2.fromOffset(340, 60), UDim2.fromOffset(-14, -36), Color3.new(1, 1, 1), true)
+	local titleLabel =
+		label(win, title, UDim2.fromOffset(340, 60), UDim2.fromOffset(-14, -36), Color3.new(1, 1, 1), true)
 	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 	titleLabel.Rotation = -3
 	titleLabel.ZIndex = 5
@@ -100,7 +101,9 @@ local function makeWindow(gui, title, width, height)
 	close.Parent = win
 	corner(close, UDim.new(1, 0))
 	stroke(close, 4)
-	close.Activated:Connect(function() win.Visible = false end)
+	close.Activated:Connect(function()
+		win.Visible = false
+	end)
 
 	local page = Instance.new("Frame")
 	page.BackgroundTransparency = 1
@@ -122,8 +125,13 @@ gui.Parent = player:WaitForChild("PlayerGui")
 
 local win, page = makeWindow(gui, "Daily Rewards!", 800, 580)
 
-label(page, "Claim a reward every day! Miss a day and your streak resets.",
-	UDim2.new(1, -60, 0, 36), UDim2.fromOffset(30, 0), COL.Text)
+label(
+	page,
+	"Claim a reward every day! Miss a day and your streak resets.",
+	UDim2.new(1, -60, 0, 36),
+	UDim2.fromOffset(30, 0),
+	COL.Text
+)
 
 local state, fetchedAt, busy = nil, 0, false
 local fetch -- defined below
@@ -207,18 +215,37 @@ local function makeTile(day, x, y, d, shape)
 	amount.LayoutOrder = 2
 
 	-- CLAIMED stamp (top)
-	local badge = label(btn, "CLAIMED", UDim2.fromOffset(d, d * 0.24),
-		UDim2.new(0, 0, 0, d / 2 - d * 0.12), Color3.fromRGB(110, 255, 150), true)
+	local badge = label(
+		btn,
+		"CLAIMED",
+		UDim2.fromOffset(d, d * 0.24),
+		UDim2.fromOffset(0, d / 2 - d * 0.12),
+		Color3.fromRGB(110, 255, 150),
+		true
+	)
 	badge.Rotation = -12
 	badge.ZIndex = 20
 	badge.Visible = false
 
-	local dayLabel = label(btn, "Day " .. day, UDim2.new(1, 0, 0, 28), UDim2.new(0, 0, 1, -28), Color3.new(1, 1, 1), true)
+	local dayLabel =
+		label(btn, "Day " .. day, UDim2.new(1, 0, 0, 28), UDim2.new(0, 0, 1, -28), Color3.new(1, 1, 1), true)
 	dayLabel.ZIndex = 20
 
-	tiles[day] = { bg = bg, bgStroke = bgStroke, base = base, face = face, emoji = emoji,
-		amount = amount, badge = badge, dayLabel = dayLabel, shape = shape, claimable = false,
-		fills = fills, outlines = outlines, s = s }
+	tiles[day] = {
+		bg = bg,
+		bgStroke = bgStroke,
+		base = base,
+		face = face,
+		emoji = emoji,
+		amount = amount,
+		badge = badge,
+		dayLabel = dayLabel,
+		shape = shape,
+		claimable = false,
+		fills = fills,
+		outlines = outlines,
+		s = s,
+	}
 	btn.Activated:Connect(function()
 		if tiles[day].claimable then
 			fetch("claim", day)
@@ -257,7 +284,9 @@ pad.Parent = claimBtn
 -- State + actions
 ---------------------------------------------------------------------
 local function firstClaimable()
-	if not state then return nil end
+	if not state then
+		return nil
+	end
 	for day = 1, math.min(state.Unlocked, 7) do
 		if not state.Claimed[tostring(day)] then
 			return day
@@ -276,13 +305,13 @@ local function applyState(st)
 
 		local claimed = st.Claimed[tostring(day)] == true
 		local locked = day > st.Unlocked
-		t.claimable = (not claimed) and (not locked)
+		t.claimable = (not claimed) and not locked
 
 		-- Day 7 is gold once it's available
 		local base = (day == 7) and GOLD or t.base
 		local fill = base
 		if locked then
-			fill = COL.Locked                       -- greyed out
+			fill = COL.Locked -- greyed out
 		elseif claimed then
 			fill = base:Lerp(COL.Gray, 0.55)
 		end
@@ -309,7 +338,9 @@ local function applyState(st)
 end
 
 fetch = function(action, day)
-	if busy then return end
+	if busy then
+		return
+	end
 	busy = true
 	local ok, st = pcall(function()
 		return DailyRF:InvokeServer(action, day)
@@ -349,7 +380,8 @@ task.spawn(function()
 					claimBtn.Text = "CLAIM"
 					claimBtn.BackgroundColor3 = COL.Green
 				else
-					info.Text = (state.Unlocked >= 7) and ("New week starts in " .. fmt(left)) or ("Next reward in " .. fmt(left))
+					info.Text = (state.Unlocked >= 7) and ("New week starts in " .. fmt(left))
+						or ("Next reward in " .. fmt(left))
 					claimBtn.Text = fmt(left)
 					claimBtn.BackgroundColor3 = COL.Gray
 				end

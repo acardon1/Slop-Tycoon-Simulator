@@ -34,7 +34,9 @@ gui.Parent = player:WaitForChild("PlayerGui")
 
 local busy = false
 local function call(action, a, b)
-	if busy then return end
+	if busy then
+		return
+	end
 	busy = true
 	pcall(function()
 		Dev:InvokeServer(action, a, b)
@@ -122,63 +124,175 @@ end
 
 header("Cash")
 row({
-	{ "+$10K", COL.Green, function() call("cash", 1e4) end },
-	{ "+$1M", COL.Green, function() call("cash", 1e6) end },
-	{ "+$1B", COL.Green, function() call("cash", 1e9) end },
-	{ "+$1T", COL.Green, function() call("cash", 1e12) end },
+	{
+		"+$10K",
+		COL.Green,
+		function()
+			call("cash", 1e4)
+		end,
+	},
+	{
+		"+$1M",
+		COL.Green,
+		function()
+			call("cash", 1e6)
+		end,
+	},
+	{
+		"+$1B",
+		COL.Green,
+		function()
+			call("cash", 1e9)
+		end,
+	},
+	{
+		"+$1T",
+		COL.Green,
+		function()
+			call("cash", 1e12)
+		end,
+	},
 })
 
 header("ATM (collect on the pad)")
 row({
-	{ "ATM +$10K", COL.Green, function() call("atm", 1e4) end },
-	{ "ATM +$1B", COL.Green, function() call("atm", 1e9) end },
+	{
+		"ATM +$10K",
+		COL.Green,
+		function()
+			call("atm", 1e4)
+		end,
+	},
+	{
+		"ATM +$1B",
+		COL.Green,
+		function()
+			call("atm", 1e9)
+		end,
+	},
 })
 
 header("Rebirth Tokens")
 row({
-	{ "+100", BLUE, function() call("tokens", 100) end },
-	{ "+10K", BLUE, function() call("tokens", 1e4) end },
-	{ "+1M", BLUE, function() call("tokens", 1e6) end },
+	{
+		"+100",
+		BLUE,
+		function()
+			call("tokens", 100)
+		end,
+	},
+	{
+		"+10K",
+		BLUE,
+		function()
+			call("tokens", 1e4)
+		end,
+	},
+	{
+		"+1M",
+		BLUE,
+		function()
+			call("tokens", 1e6)
+		end,
+	},
 })
 
 header("Rebirths, rolls and upgrades")
 row({
-	{ "+1 Rebirth", PURPLE, function() call("rebirth") end },
-	{ "Reset to 0", COL.Gray, function() call("resetRebirths") end },
-	{ "No cooldown", ORANGE, function() call("cooldown") end },
+	{
+		"+1 Rebirth",
+		PURPLE,
+		function()
+			call("rebirth")
+		end,
+	},
+	{
+		"Reset to 0",
+		COL.Gray,
+		function()
+			call("resetRebirths")
+		end,
+	},
+	{
+		"No cooldown",
+		ORANGE,
+		function()
+			call("cooldown")
+		end,
+	},
 })
 row({
-	{ "Max Slop Spots", BLUE, function() call("maxSlots") end },
-	{ "Reset all upgrades", COL.Red, function() call("resetUpgrades") end },
+	{
+		"Max Slop Spots",
+		BLUE,
+		function()
+			call("maxSlots")
+		end,
+	},
+	{
+		"Reset all upgrades",
+		COL.Red,
+		function()
+			call("resetUpgrades")
+		end,
+	},
 })
 
 header("Server events")
 row({
-	{ "Admin x5", COL.Red, function() call("event", "AdminAbuse") end },
-	{ "Rain", COL.Red, function() call("event", "Rain") end },
+	{
+		"Admin x5",
+		COL.Red,
+		function()
+			call("event", "AdminAbuse")
+		end,
+	},
+	{
+		"Rain",
+		COL.Red,
+		function()
+			call("event", "Rain")
+		end,
+	},
 })
 row({
-	{ "Belt Rush", COL.Red, function() call("event", "BeltRush") end },
-	{ "Lucky Block", COL.Red, function() call("event", "LuckyBlock") end },
+	{
+		"Belt Rush",
+		COL.Red,
+		function()
+			call("event", "BeltRush")
+		end,
+	},
+	{
+		"Lucky Block",
+		COL.Red,
+		function()
+			call("event", "LuckyBlock")
+		end,
+	},
 })
 
 -- Slops: tap one to add it to your inventory
 header("Give Slop (goes to inventory)")
 -- quality button cycles Random -> each tier in Config.MultTiers; a tier gives its minimum multiplier
-local quality = 0          -- 0 = random roll, otherwise an index into Config.MultTiers
+local quality = 0 -- 0 = random roll, otherwise an index into Config.MultTiers
 local qualityBtn
 qualityBtn = row({
-	{ "Quality: Random", COL.Gray, function()
-		quality = (quality + 1) % (#Config.MultTiers + 1)
-		local tier = Config.MultTiers[quality]
-		qualityBtn.Text = tier and string.format("Quality: %s x%.2f", tier.Name, tier.Min) or "Quality: Random"
-		qualityBtn.BackgroundColor3 = tier and tier.Color or COL.Gray
-	end },
+	{
+		"Quality: Random",
+		COL.Gray,
+		function()
+			quality = (quality + 1) % (#Config.MultTiers + 1)
+			local tier = Config.MultTiers[quality]
+			qualityBtn.Text = tier and string.format("Quality: %s x%.2f", tier.Name, tier.Min) or "Quality: Random"
+			qualityBtn.BackgroundColor3 = tier and tier.Color or COL.Gray
+		end,
+	},
 })[1]
 
 local grid = Instance.new("Frame")
 grid.BackgroundTransparency = 1
-grid.Size = UDim2.new(1, 0, 0, 0)
+grid.Size = UDim2.fromScale(1, 0)
 grid.AutomaticSize = Enum.AutomaticSize.Y
 grid.LayoutOrder = nextOrder()
 grid.Parent = panel

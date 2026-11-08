@@ -1,14 +1,14 @@
 local UI = {}
 
 UI.COL = {
-	Panel   = Color3.fromRGB(236, 236, 238),
-	Tile    = Color3.fromRGB(214, 214, 219),
+	Panel = Color3.fromRGB(236, 236, 238),
+	Tile = Color3.fromRGB(214, 214, 219),
 	Outline = Color3.fromRGB(40, 42, 48),
-	Green   = Color3.fromRGB(86, 176, 96),
-	Tab     = Color3.fromRGB(190, 190, 196),
-	Text    = Color3.fromRGB(70, 70, 76),
-	Red     = Color3.fromRGB(232, 72, 63),
-	Gray    = Color3.fromRGB(150, 150, 158),
+	Green = Color3.fromRGB(86, 176, 96),
+	Tab = Color3.fromRGB(190, 190, 196),
+	Text = Color3.fromRGB(70, 70, 76),
+	Red = Color3.fromRGB(232, 72, 63),
+	Gray = Color3.fromRGB(150, 150, 158),
 }
 local COL = UI.COL
 
@@ -85,7 +85,8 @@ function UI.makeWindow(gui, title, tabs, width, height, extra)
 	fit()
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit)
 
-	local titleLabel = UI.label(win, title, UDim2.fromOffset(340, 60), UDim2.fromOffset(-14, -36), Color3.new(1, 1, 1), true)
+	local titleLabel =
+		UI.label(win, title, UDim2.fromOffset(340, 60), UDim2.fromOffset(-14, -36), Color3.new(1, 1, 1), true)
 	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 	titleLabel.Rotation = -3
 	titleLabel.ZIndex = 5
@@ -104,7 +105,9 @@ function UI.makeWindow(gui, title, tabs, width, height, extra)
 	close.Parent = win
 	UI.corner(close, UDim.new(1, 0))
 	UI.stroke(close, 4)
-	close.Activated:Connect(function() win.Visible = false end)
+	close.Activated:Connect(function()
+		win.Visible = false
+	end)
 
 	local tabRow = Instance.new("Frame")
 	tabRow.BackgroundTransparency = 1
@@ -138,7 +141,9 @@ function UI.makeWindow(gui, title, tabs, width, height, extra)
 		pad.PaddingTop, pad.PaddingBottom = UDim.new(0, 6), UDim.new(0, 6)
 		pad.Parent = b
 		buttons[tab.Name] = b
-		b.Activated:Connect(function() selectTab(tab.Name) end)
+		b.Activated:Connect(function()
+			selectTab(tab.Name)
+		end)
 
 		local page = Instance.new("Frame")
 		page.BackgroundTransparency = 1

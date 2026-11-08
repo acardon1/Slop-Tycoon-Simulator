@@ -54,11 +54,11 @@ hud.BackgroundTransparency = 0.15
 hud.Parent = gui
 style(hud)
 
-local cashLabel = newLabel(hud, UDim2.new(1, -16, 0, 44), UDim2.new(0, 8, 0, 4), Color3.fromRGB(109, 255, 156))
-local incLabel = newLabel(hud, UDim2.new(1, -16, 0, 28), UDim2.new(0, 8, 0, 50), Color3.fromRGB(255, 210, 63))
-local rebLabel = newLabel(hud, UDim2.new(1, -16, 0, 22), UDim2.new(0, 8, 0, 80), Color3.fromRGB(200, 150, 255))
-local tokLabel = newLabel(hud, UDim2.new(1, -16, 0, 22), UDim2.new(0, 8, 0, 103), Color3.fromRGB(255, 226, 120))
-local atmLabel = newLabel(hud, UDim2.new(1, -16, 0, 24), UDim2.new(0, 8, 0, 127), Color3.fromRGB(150, 255, 190))
+local cashLabel = newLabel(hud, UDim2.new(1, -16, 0, 44), UDim2.fromOffset(8, 4), Color3.fromRGB(109, 255, 156))
+local incLabel = newLabel(hud, UDim2.new(1, -16, 0, 28), UDim2.fromOffset(8, 50), Color3.fromRGB(255, 210, 63))
+local rebLabel = newLabel(hud, UDim2.new(1, -16, 0, 22), UDim2.fromOffset(8, 80), Color3.fromRGB(200, 150, 255))
+local tokLabel = newLabel(hud, UDim2.new(1, -16, 0, 22), UDim2.fromOffset(8, 103), Color3.fromRGB(255, 226, 120))
+local atmLabel = newLabel(hud, UDim2.new(1, -16, 0, 24), UDim2.fromOffset(8, 127), Color3.fromRGB(150, 255, 190))
 
 local function refresh()
 	atmLabel.Text = "CASH TO COLLECT $" .. Config.Format(player:GetAttribute("AtmCash") or 0)
@@ -78,11 +78,11 @@ refresh()
 -- LATER it opens a profile page or the Stats page (connect head.Activated then).
 -- Quick TP: the "BASE" pop-up under the HUD (shows when you are far from your plot)
 -- and the BASE button (bottom left) ask the server to move you to your own plot.
-local FAR_FROM_BASE = 60   -- studs from the plot centre before the pop-up shows
+local FAR_FROM_BASE = 60 -- studs from the plot centre before the pop-up shows
 
 local head = Instance.new("ImageButton")
 head.AnchorPoint = Vector2.new(0, 0.5)
-head.Position = UDim2.new(0.5, 133, 0, 89)   -- HUD spans x -125..125 and y 12..166
+head.Position = UDim2.new(0.5, 133, 0, 89) -- HUD spans x -125..125 and y 12..166
 head.Size = UDim2.fromOffset(72, 72)
 head.BackgroundColor3 = Color3.fromRGB(20, 22, 28)
 head.BackgroundTransparency = 0.15
@@ -101,7 +101,7 @@ end)
 
 local tpPopup = Instance.new("TextButton")
 tpPopup.AnchorPoint = Vector2.new(0.5, 0)
-tpPopup.Position = UDim2.new(0.5, 0, 0, 174)   -- centred under the HUD (its bottom is at y 166)
+tpPopup.Position = UDim2.new(0.5, 0, 0, 174) -- centred under the HUD (its bottom is at y 166)
 tpPopup.Size = UDim2.fromOffset(100, 30)
 tpPopup.BackgroundColor3 = Color3.fromRGB(56, 193, 114)
 tpPopup.Text = "BASE"
@@ -119,7 +119,7 @@ tpPopup.Activated:Connect(goHome)
 
 local homeButton = Instance.new("TextButton")
 homeButton.AnchorPoint = Vector2.new(0, 1)
-homeButton.Position = UDim2.new(0, 154, 1, -12)   -- right of SHOP
+homeButton.Position = UDim2.new(0, 154, 1, -12) -- right of SHOP
 homeButton.Size = UDim2.fromOffset(130, 48)
 homeButton.BackgroundColor3 = Color3.fromRGB(59, 143, 224)
 homeButton.Text = "🏠 BASE"
@@ -145,11 +145,10 @@ task.spawn(function()
 	end
 end)
 
-
 -- Event banner
 local banner = Instance.new("TextLabel")
 banner.AnchorPoint = Vector2.new(0.5, 0.5)
-banner.Position = UDim2.new(0.5, 0, 0.2, 0)
+banner.Position = UDim2.fromScale(0.5, 0.2)
 banner.Size = UDim2.new(0.55, 0, 0, 54)
 banner.BackgroundColor3 = Color3.fromRGB(232, 72, 63)
 banner.Font = Enum.Font.FredokaOne
@@ -202,7 +201,12 @@ end
 -- Floating +$ text when slapping
 local function floatSlap(value)
 	local pos = UserInputService:GetMouseLocation()
-	local t = newLabel(gui, UDim2.fromOffset(120, 30), UDim2.fromOffset(pos.X - 60 + math.random(-20, 20), pos.Y - 30), Color3.fromRGB(109, 255, 156))
+	local t = newLabel(
+		gui,
+		UDim2.fromOffset(120, 30),
+		UDim2.fromOffset(pos.X - 60 + math.random(-20, 20), pos.Y - 30),
+		Color3.fromRGB(109, 255, 156)
+	)
 	t.Text = "+$" .. Config.Format(value)
 	local tween = TweenService:Create(t, TweenInfo.new(0.8), {
 		Position = t.Position - UDim2.fromOffset(0, 60),
@@ -233,7 +237,7 @@ end)
 local MarketplaceService = game:GetService("MarketplaceService")
 
 local boostLabel = Instance.new("TextLabel")
-boostLabel.Position = UDim2.new(0, 12, 0, 124)
+boostLabel.Position = UDim2.fromOffset(12, 124)
 boostLabel.Size = UDim2.fromOffset(250, 32)
 boostLabel.BackgroundColor3 = Color3.fromRGB(176, 98, 232)
 boostLabel.Font = Enum.Font.FredokaOne
@@ -267,7 +271,6 @@ shopButton.TextScaled = true
 shopButton.TextColor3 = Color3.new(1, 1, 1)
 shopButton.Parent = gui
 style(shopButton)
-
 
 local shop = Instance.new("Frame")
 shop.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -349,7 +352,10 @@ for _, item in ipairs(Config.ShopItems) do
 		-- show the Robux price if it can be looked up
 		task.spawn(function()
 			local ok, info = pcall(function()
-				return MarketplaceService:GetProductInfoAsync(id, item.Kind == "Pass" and Enum.InfoType.GamePass or Enum.InfoType.Product)
+				return MarketplaceService:GetProductInfoAsync(
+					id,
+					item.Kind == "Pass" and Enum.InfoType.GamePass or Enum.InfoType.Product
+				)
 			end)
 			if ok and info and info.PriceInRobux then
 				buy.Text = "\u{E002} " .. info.PriceInRobux

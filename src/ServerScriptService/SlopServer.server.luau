@@ -12,7 +12,6 @@ local ServerStorage = game:GetService("ServerStorage")
 local BadgeService = game:GetService("BadgeService")
 local CollectionService = game:GetService("CollectionService")
 
-
 local Config = require(RS:WaitForChild("SlopConfig"))
 
 local Remote = Instance.new("RemoteEvent")
@@ -30,55 +29,54 @@ if not storeOk then
 end
 
 -- Settings
-local SPEED = 10          -- studs per second
+local SPEED = 10 -- studs per second
 local START_SLOTS = 5
 local MAX_SLOTS = 16
 local NUM_PLOTS = 8
 
 -- Layout Settings
-local PLOT_W = 56         -- plot width; size along the belt (x)
-local PLOT_D = 60         -- plot depth; size away from the belt (z)
-local PLOT_GAP = 40       -- empty grass between neighboring plots
-local PLAZA = 14          -- curb + sidewalk depth between belt and plot
+local PLOT_W = 56 -- plot width; size along the belt (x)
+local PLOT_D = 60 -- plot depth; size away from the belt (z)
+local PLOT_GAP = 40 -- empty grass between neighboring plots
+local PLAZA = 14 -- curb + sidewalk depth between belt and plot
 local CURB_W = 1
-local BELT_W = 8		  -- width of conveyor belt
-local EDGE_PAD = 50       -- baseplate padding past the outermost plots
+local BELT_W = 8 -- width of conveyor belt
+local EDGE_PAD = 50 -- baseplate padding past the outermost plots
 local PER_SIDE = NUM_PLOTS / 2
 local PLOT_PITCH = PLOT_W + PLOT_GAP
-local PLOT_CZ = BELT_W / 2 + PLAZA + PLOT_D / 2                 -- plot center distance from belt (38)
-local PLOTS_HALF_LEN = (PER_SIDE * PLOT_PITCH - PLOT_GAP) / 2   -- 110
-local PLOTS_HALF_WIDTH = PLOT_CZ + PLOT_D / 2                   -- 58
-local BELT_HALF = PLOTS_HALF_LEN                                -- belt now spans every plot
+local PLOT_CZ = BELT_W / 2 + PLAZA + PLOT_D / 2 -- plot center distance from belt (38)
+local PLOTS_HALF_LEN = (PER_SIDE * PLOT_PITCH - PLOT_GAP) / 2 -- 110
+local PLOTS_HALF_WIDTH = PLOT_CZ + PLOT_D / 2 -- 58
+local BELT_HALF = PLOTS_HALF_LEN -- belt now spans every plot
 
 -- Office room on each plot (closed top) and its 4x4 grid of Slop tanks
-local ROOM_H = 16         -- floor to ceiling
-local CEIL_Y = 0.5 + ROOM_H   -- the floor's top is at y 0.5
+local ROOM_H = 16 -- floor to ceiling
+local CEIL_Y = 0.5 + ROOM_H -- the floor's top is at y 0.5
 local DOOR_W, DOOR_H = 16, 11 -- doorway in the front wall, toward the belt
-local TANK_PITCH = 10     -- studs between tank centres
-local TANK_W = 6          -- glass footprint
-local TANK_BASE_H = 3     -- console under the glass; its front holds the screen
+local TANK_PITCH = 10 -- studs between tank centres
+local TANK_W = 6 -- glass footprint
+local TANK_BASE_H = 3 -- console under the glass; its front holds the screen
 local TANK_GLASS_H = 8
 
 -- Factory yard behind each room (open top), and the ATM in the room's back wall
-local FACTORY_D = 44      -- yard depth beyond the room's back wall
+local FACTORY_D = 44 -- yard depth beyond the room's back wall
 local YARD_WALL_H = 7
 local BACK_DOOR_W, BACK_DOOR_H = 8, 10
-local BACK_DOOR_DX = -14  -- back-wall doorway into the yard, x offset from the plot centre
-local ATM_DX = 4          -- ATM and conveyor line up with the tank grid
+local BACK_DOOR_DX = -14 -- back-wall doorway into the yard, x offset from the plot centre
+local ATM_DX = 4 -- ATM and conveyor line up with the tank grid
 local ATM_W, ATM_H, ATM_D = 8, 10, 6
-local PAD_W, PAD_D = 12, 6    -- Collect pad in front of the ATM
-local BELT_Y = 3          -- top of the factory conveyor
-local DROP_SPEED = 6      -- studs per second along the conveyor
-local DROP_BOX = 2        -- drop box size (PlotClient draws the boxes)
-
+local PAD_W, PAD_D = 12, 6 -- Collect pad in front of the ATM
+local BELT_Y = 3 -- top of the factory conveyor
+local DROP_SPEED = 6 -- studs per second along the conveyor
+local DROP_BOX = 2 -- drop box size (PlotClient draws the boxes)
 
 -- State
-local State = {}          -- [player] = {Owned = {}, Slots = 6, Rebirths = 0, Plot = plot, Loaded = bool}
-local items = {}          -- belt items: {Part = part, Idx = monIndex, Taken = false}
-local rainbow = {}        -- parts that cycle colors (SECRET rarity)
+local State = {} -- [player] = {Owned = {}, Slots = 6, Rebirths = 0, Plot = plot, Loaded = bool}
+local items = {} -- belt items: {Part = part, Idx = monIndex, Taken = false}
+local rainbow = {} -- parts that cycle colors (SECRET rarity)
 local adminMult = 1
 local raining = false
-local beltOn = false      -- the belt only runs during events
+local beltOn = false -- the belt only runs during events
 
 local refreshPlot -- forward declaration
 local refreshMachine, clearMachine, doRoll, buyOffer -- slot machine (defined below)
@@ -90,7 +88,7 @@ end
 
 local function cleanSlop(v)
 	if type(v) == "number" and Config.Mons[v] then
-		return { Id = v, Mult = 1 }                  -- old save format
+		return { Id = v, Mult = 1 } -- old save format
 	elseif type(v) == "table" and Config.Mons[tonumber(v.Id)] then
 		return { Id = tonumber(v.Id), Mult = math.clamp(tonumber(v.Mult) or 1, 0.1, 100) }
 	end
@@ -119,8 +117,8 @@ end
 local function textLabel(parent, text, y, h, color)
 	local t = Instance.new("TextLabel")
 	t.BackgroundTransparency = 1
-	t.Position = UDim2.new(0, 0, y, 0)
-	t.Size = UDim2.new(1, 0, h, 0)
+	t.Position = UDim2.fromScale(0, y)
+	t.Size = UDim2.fromScale(1, h)
 	t.Text = text
 	t.TextScaled = true
 	t.Font = Enum.Font.FredokaOne
@@ -161,16 +159,20 @@ local function awardBadge(player, badgeId)
 	end
 end
 
-local badgeSeen = {}   -- [player] = { [badgeId] = true }
+local badgeSeen = {} -- [player] = { [badgeId] = true }
 
 local function giveBadge(p, badgeId)
-	if not badgeId or badgeId == 0 then return end
+	if not badgeId or badgeId == 0 then
+		return
+	end
 	local seen = badgeSeen[p]
 	if not seen then
 		seen = {}
 		badgeSeen[p] = seen
 	end
-	if seen[badgeId] then return end
+	if seen[badgeId] then
+		return
+	end
 	seen[badgeId] = true
 	task.spawn(awardBadge, p, badgeId)
 end
@@ -178,18 +180,28 @@ end
 -- Badges for buying a Slop. To add one: put its id in Config.Badges and add a line here.
 local function giveSlopBadges(p, m)
 	giveBadge(p, Config.Badges.FirstSlop)
-	if m.Rarity == 4 then giveBadge(p, Config.Badges.Legendary) end
-	if m.Rarity == 5 then giveBadge(p, Config.Badges.Mythic) end
-	if m.Rarity == 6 then giveBadge(p, Config.Badges.Secret) end
+	if m.Rarity == 4 then
+		giveBadge(p, Config.Badges.Legendary)
+	end
+	if m.Rarity == 5 then
+		giveBadge(p, Config.Badges.Mythic)
+	end
+	if m.Rarity == 6 then
+		giveBadge(p, Config.Badges.Secret)
+	end
 end
 
 -- Max Slop Spots, and every one of them filled
 local function checkPlotBadges(p)
 	local s = State[p]
-	if not s or s.Slots < MAX_SLOTS then return end
+	if not s or s.Slots < MAX_SLOTS then
+		return
+	end
 	giveBadge(p, Config.Badges.MaxedSpots)
 	for k = 1, s.Slots do
-		if s.Owned[k] == 0 then return end
+		if s.Owned[k] == 0 then
+			return
+		end
 	end
 	giveBadge(p, Config.Badges.FullPlot)
 end
@@ -234,7 +246,9 @@ end
 
 local function scaleTo(root, targetHeight)
 	local _, size = boundsOf(root)
-	if size.Y <= 0 then return end
+	if size.Y <= 0 then
+		return
+	end
 	local f = targetHeight / size.Y
 	if root:IsA("Model") then
 		root:ScaleTo(root:GetScale() * f)
@@ -419,12 +433,18 @@ end
 
 local function updateAtm(p)
 	local s = State[p]
-	if not s or not s.Plot then return end
+	if not s or not s.Plot then
+		return
+	end
 	local plot = s.Plot
 	local cash = math.floor(s.AtmCash)
 	plot.AtmTotal.Text = "$" .. Config.Format(cash)
-	plot.AtmFormula.Text = string.format("Slops $%s/s  x%.2f boosts  =  $%s/s",
-		Config.Format(baseInc(p)), totalMult(p), Config.Format(incomePerSec(p)))
+	plot.AtmFormula.Text = string.format(
+		"Slops $%s/s  x%.2f boosts  =  $%s/s",
+		Config.Format(baseInc(p)),
+		totalMult(p),
+		Config.Format(incomePerSec(p))
+	)
 	setPadColor(plot, cash)
 	p:SetAttribute("AtmCash", cash)
 end
@@ -441,7 +461,9 @@ local function updateIncome(p)
 	if ls and s then
 		local inc = math.floor(incomePerSec(p))
 		ls.Income.Value = inc
-		if inc > s.Stats.MaxIncome then s.Stats.MaxIncome = inc end
+		if inc > s.Stats.MaxIncome then
+			s.Stats.MaxIncome = inc
+		end
 		updateAtm(p)
 	end
 end
@@ -470,31 +492,51 @@ local world1 = Instance.new("Folder")
 world1.Name = "SlopOverWorld"
 world1.Parent = Workspace
 
+world1:SetAttribute("DropSpeed", DROP_SPEED) -- PlotClient moves drop boxes at this speed
 
-world1:SetAttribute("DropSpeed", DROP_SPEED)   -- PlotClient moves drop boxes at this speed
-
-local ground1 = mk("Ground", Vector3.new(PLOTS_HALF_LEN * 2 + EDGE_PAD * 2, 1, (PLOTS_HALF_WIDTH + FACTORY_D + EDGE_PAD) * 2), CFrame.new(0, -0.4, 0), Color3.fromRGB(90, 166, 70), world1)
+local ground1 = mk(
+	"Ground",
+	Vector3.new(PLOTS_HALF_LEN * 2 + EDGE_PAD * 2, 1, (PLOTS_HALF_WIDTH + FACTORY_D + EDGE_PAD) * 2),
+	CFrame.new(0, -0.4, 0),
+	Color3.fromRGB(90, 166, 70),
+	world1
+)
 ground1.Material = Enum.Material.Grass
 
 mk("Belt", Vector3.new(BELT_HALF * 2, 1, 8), CFrame.new(0, 0.6, 0), Color3.fromRGB(58, 63, 71), world1)
-local beltEdgeA1 = mk("BeltEdge", Vector3.new(BELT_HALF * 2, 0.4, 0.6), CFrame.new(0, 1.2, 4.3), Color3.fromRGB(255, 210, 63), world1)
-local beltEdgeB1 = mk("BeltEdge", Vector3.new(BELT_HALF * 2, 0.4, 0.6), CFrame.new(0, 1.2, -4.3), Color3.fromRGB(255, 210, 63), world1)
+mk("BeltEdge", Vector3.new(BELT_HALF * 2, 0.4, 0.6), CFrame.new(0, 1.2, 4.3), Color3.fromRGB(255, 210, 63), world1)
+mk("BeltEdge", Vector3.new(BELT_HALF * 2, 0.4, 0.6), CFrame.new(0, 1.2, -4.3), Color3.fromRGB(255, 210, 63), world1)
 
 -- Continuous curb + sidewalk on both sides of the belt
-local walkInner = BELT_W / 2 + CURB_W      -- starts just outside the yellow edge strip
-local walkOuter = BELT_W / 2 + PLAZA             -- meets the front edge of the plots
-local walkWidth = walkOuter - walkInner - 1		--width of sidewalk
+local walkInner = BELT_W / 2 + CURB_W -- starts just outside the yellow edge strip
+local walkOuter = BELT_W / 2 + PLAZA -- meets the front edge of the plots
+local walkWidth = walkOuter - walkInner - 1 --width of sidewalk
 for _, side in ipairs({ -1, 1 }) do
-	mk("Curb Inner", Vector3.new(BELT_HALF * 2, 0.9, CURB_W),
-		CFrame.new(0, 0.55, side * (walkInner - CURB_W / 2)), Color3.fromRGB(205, 205, 210), world1)
+	mk(
+		"Curb Inner",
+		Vector3.new(BELT_HALF * 2, 0.9, CURB_W),
+		CFrame.new(0, 0.55, side * (walkInner - CURB_W / 2)),
+		Color3.fromRGB(205, 205, 210),
+		world1
+	)
 
-	local walk = mk("Sidewalk", Vector3.new(BELT_HALF * 2, 0.4, walkWidth),
-		CFrame.new(0, 0.3, side * (walkInner + walkWidth / 2)), Color3.fromRGB(160, 160, 166), world1)
+	local walk = mk(
+		"Sidewalk",
+		Vector3.new(BELT_HALF * 2, 0.4, walkWidth),
+		CFrame.new(0, 0.3, side * (walkInner + walkWidth / 2)),
+		Color3.fromRGB(160, 160, 166),
+		world1
+	)
 	walk.Material = Enum.Material.Plastic
 	walk.TopSurface = Enum.SurfaceType.Studs
 
-	mk("Curb Outer", Vector3.new(BELT_HALF * 2, 0.9, CURB_W),
-		CFrame.new(0, 0.55, side * (walkOuter - 1 + CURB_W / 2)), Color3.fromRGB(205, 205, 210), world1)
+	mk(
+		"Curb Outer",
+		Vector3.new(BELT_HALF * 2, 0.9, CURB_W),
+		CFrame.new(0, 0.55, side * (walkOuter - 1 + CURB_W / 2)),
+		Color3.fromRGB(205, 205, 210),
+		world1
+	)
 end
 
 ---------------------------------------------------------------------
@@ -503,7 +545,6 @@ end
 --local world2 = Instance.new("Folder")
 --world2.Name = "BlizzardWorld"
 --world2.Parent = Workspace
-
 
 --local ground2 = mk("Ground", Vector3.new(260, 1, 120), CFrame.new(0, -0.4, 162), Color3.fromRGB(90, 166, 70), world2)
 --ground2.Material = Enum.Material.Grass
@@ -518,7 +559,6 @@ end
 --local world3 = Instance.new("Folder")
 --world3.Name = "SlopWorld"
 --world3.Parent = Workspace
-
 
 --local ground3 = mk("Ground", Vector3.new(260, 1, 120), CFrame.new(200, -0.4, 22), Color3.fromRGB(90, 166, 70), world3)
 --ground3.Material = Enum.Material.Grass
@@ -547,8 +587,13 @@ local function wallWithDoor(name, z, doorX, doorW, doorH, x0, x1, color, parent)
 	mk(name, Vector3.new(leftLen, CEIL_Y, 1), CFrame.new(doorL - leftLen / 2, CEIL_Y / 2, z), color, parent)
 	mk(name, Vector3.new(rightLen, CEIL_Y, 1), CFrame.new(doorR + rightLen / 2, CEIL_Y / 2, z), color, parent)
 	local headerBottom = 0.5 + doorH
-	mk("DoorHeader", Vector3.new(doorW, CEIL_Y - headerBottom, 1),
-		CFrame.new(doorX, (headerBottom + CEIL_Y) / 2, z), color, parent)
+	mk(
+		"DoorHeader",
+		Vector3.new(doorW, CEIL_Y - headerBottom, 1),
+		CFrame.new(doorX, (headerBottom + CEIL_Y) / 2, z),
+		color,
+		parent
+	)
 end
 
 -- Office room: walls all round (doorway in the front toward the belt, and one in the back into
@@ -560,9 +605,9 @@ local function buildRoom(plot)
 	room.Parent = plot.Folder
 
 	local wallColor = Color3.fromRGB(226, 224, 216)
-	local x0 = plot.CX - PLOT_W / 2 - 5.5      -- -X wall, behind the machine's pedestal
-	local x1 = plot.CX + PLOT_W / 2            -- +X wall
-	local lenX = x1 - x0 + 1                   -- front/back walls and ceiling cover both side walls
+	local x0 = plot.CX - PLOT_W / 2 - 5.5 -- -X wall, behind the machine's pedestal
+	local x1 = plot.CX + PLOT_W / 2 -- +X wall
+	local lenX = x1 - x0 + 1 -- front/back walls and ceiling cover both side walls
 	local midX = (x0 + x1) / 2
 	local frontZ = plot.CZ - plot.Side * PLOT_D / 2
 	local backZ = plot.CZ + plot.Side * PLOT_D / 2
@@ -572,7 +617,13 @@ local function buildRoom(plot)
 	wallWithDoor("WallFront", frontZ, plot.CX, DOOR_W, DOOR_H, x0, x1, wallColor, room)
 	wallWithDoor("WallBack", backZ, plot.CX + BACK_DOOR_DX, BACK_DOOR_W, BACK_DOOR_H, x0, x1, wallColor, room)
 
-	local ceiling = mk("Ceiling", Vector3.new(lenX, 1, PLOT_D + 1), CFrame.new(midX, CEIL_Y + 0.5, plot.CZ), Color3.fromRGB(52, 55, 64), room)
+	local ceiling = mk(
+		"Ceiling",
+		Vector3.new(lenX, 1, PLOT_D + 1),
+		CFrame.new(midX, CEIL_Y + 0.5, plot.CZ),
+		Color3.fromRGB(52, 55, 64),
+		room
+	)
 	local light = Instance.new("SurfaceLight")
 	light.Face = Enum.NormalId.Bottom
 	light.Range = 22
@@ -582,15 +633,25 @@ local function buildRoom(plot)
 
 	-- neon pipes under the ceiling: three along the room, two across
 	for _, f in ipairs({ -0.3, 0, 0.3 }) do
-		local pipe = mk("NeonPipe", Vector3.new(PLOT_W - 2, 0.8, 0.8),
-			CFrame.new(plot.CX, CEIL_Y - 0.6, plot.CZ + f * PLOT_D), Color3.fromRGB(57, 255, 120), room)
+		local pipe = mk(
+			"NeonPipe",
+			Vector3.new(PLOT_W - 2, 0.8, 0.8),
+			CFrame.new(plot.CX, CEIL_Y - 0.6, plot.CZ + f * PLOT_D),
+			Color3.fromRGB(57, 255, 120),
+			room
+		)
 		pipe.Shape = Enum.PartType.Cylinder
 		pipe.Material = Enum.Material.Neon
 		pipe.CanCollide = false
 	end
 	for _, f in ipairs({ -0.25, 0.25 }) do
-		local pipe = mk("NeonPipe", Vector3.new(PLOT_D - 2, 0.6, 0.6),
-			CFrame.new(plot.CX + f * PLOT_W, CEIL_Y - 1.4, plot.CZ) * CFrame.Angles(0, math.rad(90), 0), Color3.fromRGB(255, 80, 200), room)
+		local pipe = mk(
+			"NeonPipe",
+			Vector3.new(PLOT_D - 2, 0.6, 0.6),
+			CFrame.new(plot.CX + f * PLOT_W, CEIL_Y - 1.4, plot.CZ) * CFrame.Angles(0, math.rad(90), 0),
+			Color3.fromRGB(255, 80, 200),
+			room
+		)
 		pipe.Shape = Enum.PartType.Cylinder
 		pipe.Material = Enum.Material.Neon
 		pipe.CanCollide = false
@@ -606,46 +667,64 @@ local function buildFactory(plot)
 	f.Parent = plot.Folder
 
 	local side = plot.Side
-	local x0 = plot.CX - PLOT_W / 2 - 5.5      -- same outline as the room
+	local x0 = plot.CX - PLOT_W / 2 - 5.5 -- same outline as the room
 	local x1 = plot.CX + PLOT_W / 2
 	local lenX = x1 - x0 + 1
 	local midX = (x0 + x1) / 2
-	local backZ = plot.CZ + side * PLOT_D / 2  -- the room's back wall
-	local farZ = backZ + side * FACTORY_D      -- the yard's far wall
+	local backZ = plot.CZ + side * PLOT_D / 2 -- the room's back wall
+	local farZ = backZ + side * FACTORY_D -- the yard's far wall
 	local midZ = (backZ + farZ) / 2
 	local toRoom = Vector3.new(0, 0, -side)
 	local concrete = Color3.fromRGB(150, 152, 158)
 	local green = Color3.fromRGB(57, 255, 120)
 
 	-- yard
-	local floor = mk("YardFloor", Vector3.new(lenX, 0.4, FACTORY_D), CFrame.new(midX, 0.3, midZ), Color3.fromRGB(112, 114, 120), f)
+	local floor = mk(
+		"YardFloor",
+		Vector3.new(lenX, 0.4, FACTORY_D),
+		CFrame.new(midX, 0.3, midZ),
+		Color3.fromRGB(112, 114, 120),
+		f
+	)
 	floor.Material = Enum.Material.Concrete
 	for _, wx in ipairs({ x0, x1 }) do
-		local w = mk("YardWall", Vector3.new(1, YARD_WALL_H, FACTORY_D), CFrame.new(wx, YARD_WALL_H / 2, midZ), concrete, f)
+		local w =
+			mk("YardWall", Vector3.new(1, YARD_WALL_H, FACTORY_D), CFrame.new(wx, YARD_WALL_H / 2, midZ), concrete, f)
 		w.Material = Enum.Material.Concrete
 	end
-	local farWall = mk("YardWall", Vector3.new(lenX, YARD_WALL_H, 1), CFrame.new(midX, YARD_WALL_H / 2, farZ), concrete, f)
+	local farWall =
+		mk("YardWall", Vector3.new(lenX, YARD_WALL_H, 1), CFrame.new(midX, YARD_WALL_H / 2, farZ), concrete, f)
 	farWall.Material = Enum.Material.Concrete
 
 	-- Slop Boxer at the far end: packs the Slops' cash into boxes
 	local ax = plot.CX + ATM_DX
-	local boxerZ = farZ - side * 4             -- 1 to 7 studs in from the far wall
+	local boxerZ = farZ - side * 4 -- 1 to 7 studs in from the far wall
 	local boxer = mk("SlopBoxer", Vector3.new(7, 9, 6), CFrame.new(ax, 4.5, boxerZ), Color3.fromRGB(196, 60, 52), f)
 	local bsg = Instance.new("SurfaceGui")
-	bsg.Face = (side == 1) and Enum.NormalId.Front or Enum.NormalId.Back   -- the face toward the room
+	bsg.Face = (side == 1) and Enum.NormalId.Front or Enum.NormalId.Back -- the face toward the room
 	bsg.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
 	bsg.PixelsPerStud = 40
 	bsg.Parent = boxer
 	textLabel(bsg, "SLOP BOXER", 0.06, 0.2)
-	local startZ = farZ - side * 7.5           -- just in front of the boxer
+	local startZ = farZ - side * 7.5 -- just in front of the boxer
 	mk("Chute", Vector3.new(3, 3, 0.4), CFrame.new(ax, BELT_Y + 1.5, farZ - side * 7.1), Color3.fromRGB(12, 12, 14), f)
 
 	-- slop pipe from the room (over the ATM) to the boxer
 	local pipeLen = math.abs(boxerZ - backZ)
-	local pipe = mk("SlopPipe", Vector3.new(pipeLen, 1.2, 1.2),
-		CFrame.new(ax, 12, (backZ + boxerZ) / 2) * CFrame.Angles(0, math.rad(90), 0), green, f)
-	local pipeDown = mk("SlopPipe", Vector3.new(3, 1.2, 1.2),
-		CFrame.new(ax, 10.5, boxerZ) * CFrame.Angles(0, 0, math.rad(90)), green, f)
+	local pipe = mk(
+		"SlopPipe",
+		Vector3.new(pipeLen, 1.2, 1.2),
+		CFrame.new(ax, 12, (backZ + boxerZ) / 2) * CFrame.Angles(0, math.rad(90), 0),
+		green,
+		f
+	)
+	local pipeDown = mk(
+		"SlopPipe",
+		Vector3.new(3, 1.2, 1.2),
+		CFrame.new(ax, 10.5, boxerZ) * CFrame.Angles(0, 0, math.rad(90)),
+		green,
+		f
+	)
 	for _, pp in ipairs({ pipe, pipeDown }) do
 		pp.Shape = Enum.PartType.Cylinder
 		pp.Material = Enum.Material.Neon
@@ -657,20 +736,44 @@ local function buildFactory(plot)
 	local beltLen = math.abs(endZ - startZ)
 	local beltMidZ = (startZ + endZ) / 2
 	mk("Conveyor", Vector3.new(4, 0.6, beltLen), CFrame.new(ax, BELT_Y - 0.3, beltMidZ), Color3.fromRGB(40, 42, 48), f)
-	mk("ConveyorBase", Vector3.new(3.6, BELT_Y - 0.6, beltLen), CFrame.new(ax, (BELT_Y - 0.6) / 2, beltMidZ), Color3.fromRGB(70, 74, 86), f)
+	mk(
+		"ConveyorBase",
+		Vector3.new(3.6, BELT_Y - 0.6, beltLen),
+		CFrame.new(ax, (BELT_Y - 0.6) / 2, beltMidZ),
+		Color3.fromRGB(70, 74, 86),
+		f
+	)
 	for _, dx in ipairs({ -2.15, 2.15 }) do
-		mk("Rail", Vector3.new(0.3, 0.6, beltLen), CFrame.new(ax + dx, BELT_Y + 0.1, beltMidZ), Color3.fromRGB(255, 210, 63), f)
+		mk(
+			"Rail",
+			Vector3.new(0.3, 0.6, beltLen),
+			CFrame.new(ax + dx, BELT_Y + 0.1, beltMidZ),
+			Color3.fromRGB(255, 210, 63),
+			f
+		)
 	end
 	plot.Folder:SetAttribute("PathN", 2)
 	plot.Folder:SetAttribute("Path1", Vector3.new(ax, BELT_Y + DROP_BOX / 2, startZ))
 	plot.Folder:SetAttribute("Path2", Vector3.new(ax, BELT_Y + DROP_BOX / 2, endZ))
-	plot.DropTravel = beltLen / DROP_SPEED     -- seconds from the boxer to the ATM
+	plot.DropTravel = beltLen / DROP_SPEED -- seconds from the boxer to the ATM
 
 	-- ATM: goes through the back wall; intake on the yard side, screen on the room side
 	mk("ATM", Vector3.new(ATM_W, ATM_H, ATM_D), CFrame.new(ax, 0.5 + ATM_H / 2, backZ), Color3.fromRGB(46, 50, 60), f)
-	mk("Intake", Vector3.new(3, 2.6, 0.3), CFrame.new(ax, BELT_Y + 1.3, endZ + side * 0.1), Color3.fromRGB(12, 12, 14), f)
+	mk(
+		"Intake",
+		Vector3.new(3, 2.6, 0.3),
+		CFrame.new(ax, BELT_Y + 1.3, endZ + side * 0.1),
+		Color3.fromRGB(12, 12, 14),
+		f
+	)
 	local screenPos = Vector3.new(ax, 0.5 + ATM_H / 2 + 1, backZ) + toRoom * (ATM_D / 2 + 0.1)
-	local screen = mk("AtmScreen", Vector3.new(ATM_W - 1, ATM_H - 3, 0.2), CFrame.lookAt(screenPos, screenPos + toRoom), Color3.fromRGB(14, 16, 20), f)
+	local screen = mk(
+		"AtmScreen",
+		Vector3.new(ATM_W - 1, ATM_H - 3, 0.2),
+		CFrame.lookAt(screenPos, screenPos + toRoom),
+		Color3.fromRGB(14, 16, 20),
+		f
+	)
 	local sg = Instance.new("SurfaceGui")
 	sg.Face = Enum.NormalId.Front
 	sg.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
@@ -699,7 +802,8 @@ local function buildFactory(plot)
 		{ Vector3.new(0.4, 0.4, PAD_D), Vector3.new(PAD_W / 2 + 0.2, 0, 0) },
 		{ Vector3.new(0.4, 0.4, PAD_D), Vector3.new(-PAD_W / 2 - 0.2, 0, 0) },
 	}) do
-		local edge = mk("PadEdge", e[1], CFrame.new(padCenter + e[2] + Vector3.new(0, 0.05, 0)), Color3.fromRGB(90, 94, 104), f)
+		local edge =
+			mk("PadEdge", e[1], CFrame.new(padCenter + e[2] + Vector3.new(0, 0.05, 0)), Color3.fromRGB(90, 94, 104), f)
 		edge.Material = Enum.Material.Neon
 		edge.CanCollide = false
 		table.insert(plot.PadOutline, edge)
@@ -709,7 +813,13 @@ end
 -- Slap and rebirth blocks stand inside the room, one each side of the front doorway.
 -- PLANNED: rebirth moves to its own totem/structure that players walk up to.
 local function mkBlock(plot, name, dx, color, text)
-	local b = mk(name, Vector3.new(3.5, 3.5, 1.5), CFrame.new(plot.CX + dx, 2.25, plot.CZ - plot.Side * (PLOT_D / 2 - 2.5)), color, plot.Folder)
+	local b = mk(
+		name,
+		Vector3.new(3.5, 3.5, 1.5),
+		CFrame.new(plot.CX + dx, 2.25, plot.CZ - plot.Side * (PLOT_D / 2 - 2.5)),
+		color,
+		plot.Folder
+	)
 	local gui = Instance.new("BillboardGui")
 	gui.Size = UDim2.fromOffset(140, 40)
 	gui.StudsOffset = Vector3.new(0, 3, 0)
@@ -725,14 +835,14 @@ end
 -- The client animates the reels; the server owns the parts and the attributes
 -- (Unlocked / Idx / Mult / Uid on each reel, Spin / OwnerId on the machine).
 local REEL_W, REEL_STEP = 3.2, 3.7
-local HEX_S = 3                              -- hexagon side length
-local HEX_A = HEX_S * math.sqrt(3) / 2       -- axis to the middle of a face
-local RY = 7.75                              -- reel centre height
+local HEX_S = 3 -- hexagon side length
+local HEX_A = HEX_S * math.sqrt(3) / 2 -- axis to the middle of a face
+local RY = 7.75 -- reel centre height
 
 local function buildMachine(plot)
 	local n = Config.Slot.Reels
-	local H = PLOT_D                          -- as long as the plot is deep
-	local ox = plot.CX - PLOT_W / 2           -- plot's -X edge = machine front plane
+	local H = PLOT_D -- as long as the plot is deep
+	local ox = plot.CX - PLOT_W / 2 -- plot's -X edge = machine front plane
 	local reelsLen = n * REEL_STEP
 	local capW = (H - reelsLen) / 2
 	local capZ = reelsLen / 2 + capW / 2
@@ -777,9 +887,9 @@ local function buildMachine(plot)
 	reels.Name = "Reels"
 	reels.Parent = machine
 	plot.Reels = {}
-	local axisX = ox - HEX_A + 0.8             -- the middle face sticks out of the cabinet
+	local axisX = ox - HEX_A + 0.8 -- the middle face sticks out of the cabinet
 	for j = 1, n do
-		local dz = ((n + 1) / 2 - j) * REEL_STEP   -- reel 1 is on the viewer's left
+		local dz = ((n + 1) / 2 - j) * REEL_STEP -- reel 1 is on the viewer's left
 		local reel = Instance.new("Model")
 		reel.Name = "Reel" .. j
 		reel:SetAttribute("Unlocked", false)
@@ -826,7 +936,10 @@ local function buildMachine(plot)
 	pp.MaxActivationDistance = 18
 	pp.Triggered:Connect(function(who)
 		if plot.Owner ~= who or not State[who] then
-			notify(who, plot.Owner and ("That's " .. plot.Owner.DisplayName .. "'s machine!") or "Nobody owns this machine yet.")
+			notify(
+				who,
+				plot.Owner and ("That's " .. plot.Owner.DisplayName .. "'s machine!") or "Nobody owns this machine yet."
+			)
 			return
 		end
 		if not doRoll(who) then
@@ -836,7 +949,7 @@ local function buildMachine(plot)
 end
 
 for i = 1, NUM_PLOTS do
-	local side = (i % 2 == 1) and -1 or 1            -- -1 = north of belt, 1 = south
+	local side = (i % 2 == 1) and -1 or 1 -- -1 = north of belt, 1 = south
 	local col = math.ceil(i / 2)
 	local cx = (col - (PER_SIDE + 1) / 2) * PLOT_PITCH
 	local cz = side * PLOT_CZ
@@ -846,13 +959,24 @@ for i = 1, NUM_PLOTS do
 	folder.Parent = world1
 
 	local plot = {
-		Index = i, CX = cx, CZ = cz, Side = side, Folder = folder, Owner = nil,
+		Index = i,
+		CX = cx,
+		CZ = cz,
+		Side = side,
+		Folder = folder,
+		Owner = nil,
 		-- spawn near the front of the plot, looking at the belt
 		Spawn = CFrame.lookAt(Vector3.new(cx, 4, cz - side * (PLOT_D / 2 - 4)), Vector3.new(cx, 4, 0)),
 	}
 
 	-- office floor; the plate also runs under the Slop Machine on the -X side
-	local plotPlate = mk("Base", Vector3.new(PLOT_W + 5, 0.4, PLOT_D), CFrame.new(cx - 2.5, 0.3, cz), Color3.fromRGB(72, 78, 92), folder)
+	local plotPlate = mk(
+		"Base",
+		Vector3.new(PLOT_W + 5, 0.4, PLOT_D),
+		CFrame.new(cx - 2.5, 0.3, cz),
+		Color3.fromRGB(72, 78, 92),
+		folder
+	)
 	plotPlate.Material = Enum.Material.Fabric
 
 	buildRoom(plot)
@@ -880,14 +1004,15 @@ for i = 1, NUM_PLOTS do
 	cd.MaxActivationDistance = 24
 	cd.Parent = slap
 	cd.MouseClick:Connect(function(who)
-		if plot.Owner ~= who or not State[who] then return end
+		if plot.Owner ~= who or not State[who] then
+			return
+		end
 		local v = slapValue(who)
 		setCash(who, getCash(who) + v)
 		addStat(who, "TotalCash", v)
 		addStat(who, "CashThisRebirth", v)
 		Remote:FireClient(who, "slap", v)
 	end)
-
 
 	-- rebirth block (hold to confirm)
 	---------------------------------------------------------------------------------------------
@@ -896,7 +1021,9 @@ for i = 1, NUM_PLOTS do
 	local reb = mkBlock(plot, "Rebirth", 12, Color3.fromRGB(176, 98, 232), "REBIRTH")
 	plot.RebirthPrompt = mkPrompt(reb, "Rebirth (hold)", "Resets cash and base", 2)
 	plot.RebirthPrompt.Triggered:Connect(function(who)
-		if plot.Owner ~= who or not State[who] then return end
+		if plot.Owner ~= who or not State[who] then
+			return
+		end
 		local s = State[who]
 		local cost = Config.RebirthCost(s.Rebirths)
 		if getCash(who) < cost then
@@ -913,7 +1040,9 @@ for i = 1, NUM_PLOTS do
 
 		s.Rebirths += 1
 		giveBadge(who, Config.Badges.FirstRebirth)
-		if s.Rebirths >= 5 then giveBadge(who, Config.Badges.Rebirth5) end
+		if s.Rebirths >= 5 then
+			giveBadge(who, Config.Badges.Rebirth5)
+		end
 		setCash(who, 0)
 		-- the ATM is cash too, so it empties (to keep it through rebirth, delete these two lines)
 		s.AtmCash = 0
@@ -926,7 +1055,11 @@ for i = 1, NUM_PLOTS do
 		who.leaderstats.Rebirths.Value = s.Rebirths
 		refreshPlot(who)
 		notify(who, "+" .. Config.Format(tokens) .. " Rebirth Tokens!")
-		Remote:FireAllClients("banner", who.DisplayName .. " REBIRTHED! (x" .. string.format("%.2f", Config.Mult(s.Rebirths)) .. ")", 4)
+		Remote:FireAllClients(
+			"banner",
+			who.DisplayName .. " REBIRTHED! (x" .. string.format("%.2f", Config.Mult(s.Rebirths)) .. ")",
+			4
+		)
 	end)
 
 	buildMachine(plot)
@@ -938,9 +1071,13 @@ end
 ---------------------------------------------------------------------
 local function sell(p, k)
 	local s = State[p]
-	if not s then return end
+	if not s then
+		return
+	end
 	local sl = s.Owned[k]
-	if not sl or sl == 0 then return end
+	if not sl or sl == 0 then
+		return
+	end
 	local mon = Config.Mons[sl.Id]
 	local v = math.floor(mon.Price / 2)
 	setCash(p, getCash(p) + v)
@@ -963,9 +1100,11 @@ end
 -- (tag "SlopTank", attribute DropTime, synced to SlopOverWorld's "IncomeTick").
 local function buildTank(p, plot, k, sl, mult)
 	local pos = tankPos(plot, k)
-	local front = Vector3.new(0, 0, -plot.Side)       -- toward the door
+	local front = Vector3.new(0, 0, -plot.Side) -- toward the door
 	local metal = Color3.fromRGB(58, 62, 74)
-	local up = function(y) return pos + Vector3.new(0, y, 0) end
+	local up = function(y)
+		return pos + Vector3.new(0, y, 0)
+	end
 
 	local tank = Instance.new("Model")
 	tank.Name = "Tank" .. k
@@ -973,15 +1112,33 @@ local function buildTank(p, plot, k, sl, mult)
 
 	local outer = TANK_W + 0.4
 	mk("Base", Vector3.new(outer, TANK_BASE_H, outer), CFrame.new(up(TANK_BASE_H / 2)), metal, tank)
-	local rim = mk("Rim", Vector3.new(outer + 0.1, 0.2, outer + 0.1), CFrame.new(up(TANK_BASE_H + 0.1)), Color3.fromRGB(57, 255, 120), tank)
+	local rim = mk(
+		"Rim",
+		Vector3.new(outer + 0.1, 0.2, outer + 0.1),
+		CFrame.new(up(TANK_BASE_H + 0.1)),
+		Color3.fromRGB(57, 255, 120),
+		tank
+	)
 	rim.Material = Enum.Material.Neon
-	local glass = mk("Glass", Vector3.new(TANK_W, TANK_GLASS_H, TANK_W), CFrame.new(up(TANK_BASE_H + TANK_GLASS_H / 2)), Color3.fromRGB(170, 230, 255), tank)
+	local glass = mk(
+		"Glass",
+		Vector3.new(TANK_W, TANK_GLASS_H, TANK_W),
+		CFrame.new(up(TANK_BASE_H + TANK_GLASS_H / 2)),
+		Color3.fromRGB(170, 230, 255),
+		tank
+	)
 	glass.Material = Enum.Material.Glass
 	glass.Transparency = 0.75
 	mk("Cap", Vector3.new(outer, 0.6, outer), CFrame.new(up(TANK_BASE_H + TANK_GLASS_H + 0.3)), metal, tank)
 
 	local screenPos = up(TANK_BASE_H / 2) + front * (outer / 2 + 0.1)
-	local screen = mk("Screen", Vector3.new(TANK_W - 0.6, TANK_BASE_H - 0.8, 0.2), CFrame.lookAt(screenPos, screenPos + front), Color3.fromRGB(18, 20, 26), tank)
+	local screen = mk(
+		"Screen",
+		Vector3.new(TANK_W - 0.6, TANK_BASE_H - 0.8, 0.2),
+		CFrame.lookAt(screenPos, screenPos + front),
+		Color3.fromRGB(18, 20, 26),
+		tank
+	)
 	local sg = Instance.new("SurfaceGui")
 	sg.Name = "Gui"
 	sg.Face = Enum.NormalId.Front
@@ -998,12 +1155,22 @@ local function buildTank(p, plot, k, sl, mult)
 		local root = buildDisplay(sl.Id, m.ModelHeight or 4, true)
 		fitInside(root, TANK_W - 1.2, TANK_GLASS_H - 1.5)
 		local cf = boundsOf(root)
-		root:PivotTo(root:GetPivot() + (glass.Position - cf.Position))   -- floats in the middle of the glass
+		root:PivotTo(root:GetPivot() + (glass.Position - cf.Position)) -- floats in the middle of the glass
 		root.Parent = tank
 
 		textLabel(sg, m.Name, 0.04, 0.3, Config.Rarities[m.Rarity].Color)
-		local drop = textLabel(sg, string.format('+$%s  <font color="#%s">%s</font>',
-			Config.Format(slopIncome(sl) * mult), tier.Color:ToHex(), tier.Name), 0.34, 0.28, Color3.fromRGB(110, 255, 150))
+		local drop = textLabel(
+			sg,
+			string.format(
+				'+$%s  <font color="#%s">%s</font>',
+				Config.Format(slopIncome(sl) * mult),
+				tier.Color:ToHex(),
+				tier.Name
+			),
+			0.34,
+			0.28,
+			Color3.fromRGB(110, 255, 150)
+		)
 		drop.RichText = true
 
 		local bar = Instance.new("Frame")
@@ -1043,7 +1210,9 @@ end
 
 function refreshPlot(p)
 	local s = State[p]
-	if not s or not s.Plot then return end
+	if not s or not s.Plot then
+		return
+	end
 	local plot = s.Plot
 	plot.Dynamic:ClearAllChildren()
 
@@ -1054,8 +1223,11 @@ function refreshPlot(p)
 		buildTank(p, plot, k, (sl and sl ~= 0) and sl or nil, mult)
 	end
 
-	plot.RebirthPrompt.ObjectText = "$" .. Config.Format(Config.RebirthCost(s.Rebirths)) .. " for x" .. string.format("%.2f", Config.Mult(s.Rebirths + 1))
-	
+	plot.RebirthPrompt.ObjectText = "$"
+		.. Config.Format(Config.RebirthCost(s.Rebirths))
+		.. " for x"
+		.. string.format("%.2f", Config.Mult(s.Rebirths + 1))
+
 	checkPlotBadges(p)
 	updateIncome(p)
 end
@@ -1088,8 +1260,12 @@ end
 
 local function buyItem(p, item)
 	local s = State[p]
-	if not s or not s.Plot then return end
-	if item.Taken or not item.Part.Parent then return end
+	if not s or not s.Plot then
+		return
+	end
+	if item.Taken or not item.Part.Parent then
+		return
+	end
 
 	local m = Config.Mons[item.Idx]
 	if getCash(p) < m.Price then
@@ -1134,7 +1310,13 @@ local function spawnItem()
 	local m = Config.Mons[idx]
 	local mult = Config.RollMult()
 	local tier = Config.MultTier(mult)
-	local sub = "$" .. Config.Format(m.Price) .. "  <font color=\"#" .. tier.Color:ToHex() .. "\">" .. tier.Name .. "</font>"
+	local sub = "$"
+		.. Config.Format(m.Price)
+		.. '  <font color="#'
+		.. tier.Color:ToHex()
+		.. '">'
+		.. tier.Name
+		.. "</font>"
 	local part = makeMon(idx, "belt", sub, Color3.fromRGB(110, 255, 150))
 	part.Parent = world1
 	placeAt(part, Vector3.new(BELT_HALF - 2, 2.6, 0))
@@ -1147,7 +1329,11 @@ local function spawnItem()
 	table.insert(items, item)
 
 	if m.Rarity >= 5 then
-		Remote:FireAllClients("banner", "A " .. Config.Rarities[m.Rarity].Name .. " " .. m.Name .. " is on the belt!", 4)
+		Remote:FireAllClients(
+			"banner",
+			"A " .. Config.Rarities[m.Rarity].Name .. " " .. m.Name .. " is on the belt!",
+			4
+		)
 	end
 end
 
@@ -1203,20 +1389,40 @@ local function loadData(p)
 	end)
 
 	if not ok then
-		warn("[Slop] Could not load saved data for " .. p.Name .. ": " .. tostring(data)
-			.. "  (In Studio: publish the place, then turn on Game Settings > Security > Enable Studio Access to API Services.)")
+		warn(
+			"[Slop] Could not load saved data for "
+				.. p.Name
+				.. ": "
+				.. tostring(data)
+				.. "  (In Studio: publish the place, then turn on Game Settings > Security > Enable Studio Access to API Services.)"
+		)
 	end
 
 	-- In Studio we let play-testing continue (and purchases grant) even when saving is unavailable.
 	-- In a real server, Loaded stays false on failure so we never overwrite or lose a player's data.
 	local s = {
-		Owned = {}, Slots = START_SLOTS, Rebirths = 0, Loaded = ok or RunService:IsStudio(),
-		Passes = {}, BoostUntil = 0, Receipts = {},
-		DailyLast = 0, DailyStreak = 0, DailyClaimed = {}, DailySeen = {},
-		Version = Config.DATA_VERSION, Inventory = {}, Discovered = {}, Tokens = 0, Stats = {},
-		RollCount = 1, RollCap = Config.Wheel.CapStart, SpeedLevel = 0, NextRoll = 0,
-		AtmCash = 0,     -- waiting in the ATM (saved)
-		Pending = {},    -- drops still on the conveyor: { At = os.clock() arrival, Amount }
+		Owned = {},
+		Slots = START_SLOTS,
+		Rebirths = 0,
+		Loaded = ok or RunService:IsStudio(),
+		Passes = {},
+		BoostUntil = 0,
+		Receipts = {},
+		DailyLast = 0,
+		DailyStreak = 0,
+		DailyClaimed = {},
+		DailySeen = {},
+		Version = Config.DATA_VERSION,
+		Inventory = {},
+		Discovered = {},
+		Tokens = 0,
+		Stats = {},
+		RollCount = 1,
+		RollCap = Config.Wheel.CapStart,
+		SpeedLevel = 0,
+		NextRoll = 0,
+		AtmCash = 0, -- waiting in the ATM (saved)
+		Pending = {}, -- drops still on the conveyor: { At = os.clock() arrival, Amount }
 	}
 	for k, v in pairs(Config.DefaultStats) do
 		s.Stats[k] = v
@@ -1232,9 +1438,15 @@ local function loadData(p)
 		s.BoostUntil = tonumber(data.BoostUntil) or 0
 		s.DailyLast = tonumber(data.DailyLast) or 0
 		s.DailyStreak = tonumber(data.DailyStreak) or 0
-		if type(data.DailyClaimed) == "table" then s.DailyClaimed = data.DailyClaimed end
-		if type(data.DailySeen) == "table" then s.DailySeen = data.DailySeen end
-		if type(data.Receipts) == "table" then s.Receipts = data.Receipts end
+		if type(data.DailyClaimed) == "table" then
+			s.DailyClaimed = data.DailyClaimed
+		end
+		if type(data.DailySeen) == "table" then
+			s.DailySeen = data.DailySeen
+		end
+		if type(data.Receipts) == "table" then
+			s.Receipts = data.Receipts
+		end
 
 		for i = 1, s.Slots do
 			s.Owned[i] = cleanSlop(data.Owned and data.Owned[i]) or 0
@@ -1245,7 +1457,9 @@ local function loadData(p)
 		if type(data.Inventory) == "table" then
 			for _, v in ipairs(data.Inventory) do
 				local sl = cleanSlop(v)
-				if sl then table.insert(s.Inventory, sl) end
+				if sl then
+					table.insert(s.Inventory, sl)
+				end
 			end
 		end
 		if type(data.Stats) == "table" then
@@ -1261,7 +1475,8 @@ local function loadData(p)
 			end
 		end
 
-		s.RollCap = math.clamp(tonumber(data.RollCap) or Config.Wheel.CapStart, Config.Wheel.CapStart, Config.Wheel.CapMax)
+		s.RollCap =
+			math.clamp(tonumber(data.RollCap) or Config.Wheel.CapStart, Config.Wheel.CapStart, Config.Wheel.CapMax)
 		s.RollCount = math.clamp(tonumber(data.RollCount) or 1, 1, s.RollCap)
 		s.SpeedLevel = math.clamp(tonumber(data.SpeedLevel) or 0, 0, Config.Wheel.SpeedLevels)
 
@@ -1269,12 +1484,16 @@ local function loadData(p)
 		if ver < 3 then
 			local all = {}
 			for _, sl in ipairs(s.Owned) do
-				if sl ~= 0 then table.insert(all, sl) end
+				if sl ~= 0 then
+					table.insert(all, sl)
+				end
 			end
 			for _, sl in ipairs(s.Inventory) do
 				table.insert(all, sl)
 			end
-			table.sort(all, function(a, b) return slopIncome(a) > slopIncome(b) end)
+			table.sort(all, function(a, b)
+				return slopIncome(a) > slopIncome(b)
+			end)
 			s.Slots = START_SLOTS
 			s.Owned, s.Inventory = {}, {}
 			for k = 1, START_SLOTS do
@@ -1291,7 +1510,9 @@ local function loadData(p)
 	end
 
 	for _, sl in ipairs(s.Owned) do
-		if sl ~= 0 then s.Discovered[tostring(sl.Id)] = true end
+		if sl ~= 0 then
+			s.Discovered[tostring(sl.Id)] = true
+		end
 	end
 	for _, sl in ipairs(s.Inventory) do
 		s.Discovered[tostring(sl.Id)] = true
@@ -1301,12 +1522,16 @@ end
 
 local function saveData(p)
 	local s = State[p]
-	if not s or not s.Loaded or not p:FindFirstChild("leaderstats") then return false end
-	if s.Cheated then return false end   -- DevTools were used this session (see Config.DEV_BLOCK_SAVE)
+	if not s or not s.Loaded or not p:FindFirstChild("leaderstats") then
+		return false
+	end
+	if s.Cheated then
+		return false
+	end -- DevTools were used this session (see Config.DEV_BLOCK_SAVE)
 	while #s.Receipts > 100 do
 		table.remove(s.Receipts, 1)
 	end
-	local atm = s.AtmCash                -- drops still on the conveyor count as in the ATM
+	local atm = s.AtmCash -- drops still on the conveyor count as in the ATM
 	for _, d in ipairs(s.Pending) do
 		atm += d.Amount
 	end
@@ -1328,8 +1553,8 @@ local function saveData(p)
 			Discovered = s.Discovered,
 			Tokens = s.Tokens,
 			AtmCash = atm,
-			RollCount = s.RollCount, 
-			RollCap = s.RollCap, 
+			RollCount = s.RollCount,
+			RollCap = s.RollCap,
 			SpeedLevel = s.SpeedLevel,
 		})
 	end)
@@ -1338,10 +1563,14 @@ end
 
 local function equipBest(p, limit)
 	local s = State[p]
-	if not s then return end
+	if not s then
+		return
+	end
 	local all = {}
 	for _, sl in ipairs(s.Owned) do
-		if sl ~= 0 then table.insert(all, sl) end
+		if sl ~= 0 then
+			table.insert(all, sl)
+		end
 	end
 	for _, sl in ipairs(s.Inventory) do
 		table.insert(all, sl)
@@ -1351,9 +1580,15 @@ local function equipBest(p, limit)
 	end)
 	limit = math.min(limit or s.Slots, s.Slots)
 	local owned, inv = {}, {}
-	for k = 1, s.Slots do owned[k] = 0 end
+	for k = 1, s.Slots do
+		owned[k] = 0
+	end
 	for i, sl in ipairs(all) do
-		if i <= limit then owned[i] = sl else table.insert(inv, sl) end
+		if i <= limit then
+			owned[i] = sl
+		else
+			table.insert(inv, sl)
+		end
 	end
 	s.Owned, s.Inventory = owned, inv
 	refreshPlot(p)
@@ -1375,7 +1610,7 @@ local function buildOfferDisplay(plot, o)
 
 	local root = buildDisplay(o.Id, Config.Slot.OfferHeight)
 	root.Parent = holder
-	placeAt(root, Vector3.new(x, 2.2, z))          -- feet land on the pad
+	placeAt(root, Vector3.new(x, 2.2, z)) -- feet land on the pad
 
 	local primary = primaryOf(root)
 	local cf, size = boundsOf(root)
@@ -1407,11 +1642,15 @@ end
 -- keeps the little Slops in front of the reels in step with the player's offers
 local function syncDisplays(p)
 	local s = State[p]
-	if not s or not s.Plot then return end
+	if not s or not s.Plot then
+		return
+	end
 	local plot = s.Plot
 	local wanted = {}
 	for _, o in ipairs(s.Offers or {}) do
-		if o.Shown then wanted[o.Uid] = o end
+		if o.Shown then
+			wanted[o.Uid] = o
+		end
 	end
 	for uid, d in pairs(plot.Displays) do
 		if not wanted[uid] then
@@ -1428,12 +1667,16 @@ end
 
 function refreshMachine(p)
 	local s = State[p]
-	if not s or not s.Plot then return end
+	if not s or not s.Plot then
+		return
+	end
 	local plot = s.Plot
 	local order = Config.Slot.ReelOrder
 	local byReel = {}
 	for _, o in ipairs(s.Offers or {}) do
-		if o.Reel then byReel[o.Reel] = o end
+		if o.Reel then
+			byReel[o.Reel] = o
+		end
 	end
 	for j, reel in ipairs(plot.Reels) do
 		local unlocked = (table.find(order, j) or math.huge) <= s.RollCount
@@ -1444,8 +1687,13 @@ function refreshMachine(p)
 		reel:SetAttribute("Uid", o and o.Uid or 0)
 	end
 	plot.Machine:SetAttribute("OwnerId", p.UserId)
-	plot.SignLabel.Text = string.format("%s's SLOP MACHINE  |  Rolls %d/%d  |  Cooldown %.1fs",
-		p.DisplayName, s.RollCount, s.RollCap, Config.RollCooldown(s.SpeedLevel))
+	plot.SignLabel.Text = string.format(
+		"%s's SLOP MACHINE  |  Rolls %d/%d  |  Cooldown %.1fs",
+		p.DisplayName,
+		s.RollCount,
+		s.RollCap,
+		Config.RollCooldown(s.SpeedLevel)
+	)
 	syncDisplays(p)
 end
 
@@ -1467,11 +1715,15 @@ end
 -- RollCount Slops per pull, cooldown from SpeedLevel. Offers appear in front of the reels once they stop.
 function doRoll(p)
 	local s = State[p]
-	if not s or not s.Loaded or not s.Plot then return false end
+	if not s or not s.Loaded or not s.Plot then
+		return false
+	end
 	local now = os.clock()
-	if now < s.NextRoll - 0.1 then return false end
+	if now < s.NextRoll - 0.1 then
+		return false
+	end
 	s.NextRoll = now + Config.RollCooldown(s.SpeedLevel)
-	s.Offers = {}                       -- leftovers from the last pull are gone
+	s.Offers = {} -- leftovers from the last pull are gone
 	s.OfferSeq = s.OfferSeq or 0
 	local order = Config.Slot.ReelOrder
 	for k = 1, math.min(s.RollCount, #order) do
@@ -1491,12 +1743,16 @@ function doRoll(p)
 		end
 	end
 	refreshMachine(p)
-	s.Plot.Machine:SetAttribute("Spin", (s.Plot.Machine:GetAttribute("Spin") or 0) + 1)   -- set last: clients animate on this
+	s.Plot.Machine:SetAttribute("Spin", (s.Plot.Machine:GetAttribute("Spin") or 0) + 1) -- set last: clients animate on this
 
 	local seq = s.OfferSeq
 	task.delay(Config.Slot.SpinTime + 0.1, function()
-		if State[p] ~= s or s.OfferSeq ~= seq then return end      -- a newer pull replaced these
-		for _, o in ipairs(s.Offers) do o.Shown = true end
+		if State[p] ~= s or s.OfferSeq ~= seq then
+			return
+		end -- a newer pull replaced these
+		for _, o in ipairs(s.Offers) do
+			o.Shown = true
+		end
 		syncDisplays(p)
 	end)
 	return true
@@ -1504,7 +1760,9 @@ end
 
 function buyOffer(p, uid)
 	local s = State[p]
-	if not s or not s.Offers then return false end
+	if not s or not s.Offers then
+		return false
+	end
 	for i, o in ipairs(s.Offers) do
 		if o.Uid == uid then
 			local m = Config.Mons[o.Id]
@@ -1543,13 +1801,22 @@ Menu.Parent = RS
 local function menuSnapshot(p, results)
 	local s = State[p]
 	local found = 0
-	for _ in pairs(s.Discovered) do found += 1 end
+	for _ in pairs(s.Discovered) do
+		found += 1
+	end
 	return {
-		Owned = s.Owned, Inventory = s.Inventory, Slots = s.Slots, Tokens = s.Tokens,
-		RollCount = s.RollCount, RollCap = s.RollCap, SpeedLevel = s.SpeedLevel,
+		Owned = s.Owned,
+		Inventory = s.Inventory,
+		Slots = s.Slots,
+		Tokens = s.Tokens,
+		RollCount = s.RollCount,
+		RollCap = s.RollCap,
+		SpeedLevel = s.SpeedLevel,
 		Cooldown = Config.RollCooldown(s.SpeedLevel),
 		Wait = math.max(0, s.NextRoll - os.clock()),
-		Stats = s.Stats, Discovered = found, TotalSlops = #Config.Mons,
+		Stats = s.Stats,
+		Discovered = found,
+		TotalSlops = #Config.Mons,
 		Results = results,
 	}
 end
@@ -1570,7 +1837,9 @@ end
 
 Menu.OnServerInvoke = function(p, action, a, b)
 	local s = State[p]
-	if not s or not s.Loaded then return nil end
+	if not s or not s.Loaded then
+		return nil
+	end
 	s.Offers = s.Offers or {}
 	s.OfferSeq = s.OfferSeq or 0
 	local W = Config.Wheel
@@ -1587,7 +1856,6 @@ Menu.OnServerInvoke = function(p, action, a, b)
 				notify(p, "No free Slop Spot. Swap one out, or buy more with tokens.")
 			end
 		end
-
 	elseif action == "swap" then
 		local inv = isIndex(a) and s.Inventory[a]
 		local out = isIndex(b) and s.Owned[b]
@@ -1596,7 +1864,6 @@ Menu.OnServerInvoke = function(p, action, a, b)
 			s.Inventory[a] = out
 			refreshPlot(p)
 		end
-
 	elseif action == "unequip" then
 		local sl = isIndex(a) and s.Owned[a]
 		if sl and sl ~= 0 then
@@ -1608,10 +1875,8 @@ Menu.OnServerInvoke = function(p, action, a, b)
 				refreshPlot(p)
 			end
 		end
-
 	elseif action == "equipBest" then
 		equipBest(p)
-
 	elseif action == "sell" then
 		local sl = isIndex(a) and s.Inventory[a]
 		if sl then
@@ -1621,15 +1886,12 @@ Menu.OnServerInvoke = function(p, action, a, b)
 			setCash(p, getCash(p) + v)
 			notify(p, "Sold " .. mon.Name .. " for $" .. Config.Format(v))
 		end
-
 	elseif action == "sellEquipped" then
 		if isIndex(a) then
 			sell(p, a)
 		end
-
 	elseif action == "buyOffer" then
 		buyOffer(p, a)
-
 	elseif action == "upgradeRolls" then
 		if s.RollCount < s.RollCap then
 			local cost = Config.RollUpgradeCost(s.RollCount)
@@ -1640,17 +1902,14 @@ Menu.OnServerInvoke = function(p, action, a, b)
 				notify(p, "Need $" .. Config.Format(cost))
 			end
 		end
-
 	elseif action == "upgradeCap" then
 		if s.RollCap < W.CapMax and spendTokens(p, Config.CapUpgradeCost(s.RollCap)) then
 			s.RollCap += 1
 		end
-
 	elseif action == "upgradeSpeed" then
 		if s.SpeedLevel < W.SpeedLevels and spendTokens(p, Config.SpeedUpgradeCost(s.SpeedLevel)) then
 			s.SpeedLevel += 1
 		end
-
 	elseif action == "buySlot" then
 		if s.Slots < MAX_SLOTS and spendTokens(p, Config.SlotCost(s.Slots)) then
 			s.Slots += 1
@@ -1677,12 +1936,14 @@ DailyRF.Parent = RS
 -- Counts today as a login day if it hasn't been counted yet.
 local function dailyRefresh(s)
 	local today = os.time() // DAY
-	if s.DailyLast == today then return end
+	if s.DailyLast == today then
+		return
+	end
 
 	if s.DailyLast == today - 1 and s.DailyStreak < 7 then
-		s.DailyStreak += 1                 -- consecutive day: unlock the next reward
+		s.DailyStreak += 1 -- consecutive day: unlock the next reward
 	else
-		s.DailyStreak = 1                  -- first login, missed a day, or finished the week
+		s.DailyStreak = 1 -- first login, missed a day, or finished the week
 		s.DailyClaimed = {}
 	end
 	s.DailyLast = today
@@ -1701,7 +1962,9 @@ end
 local function grantDailyReward(p, day)
 	local s = State[p]
 	local r = Config.DailyRewards[day]
-	if not s or not r then return false end
+	if not s or not r then
+		return false
+	end
 	local seenKey = "Day" .. day
 	local isFirst = (r.First ~= nil or r.FirstIdx ~= nil) and not s.DailySeen[seenKey]
 
@@ -1715,13 +1978,11 @@ local function grantDailyReward(p, day)
 		end
 		setCash(p, getCash(p) + amount)
 		notify(p, "Daily reward: +$" .. Config.Format(amount))
-
 	elseif r.Kind == "Boost" then
 		s.BoostUntil = math.max(os.time(), s.BoostUntil) + r.Seconds
 		p:SetAttribute("BoostUntil", s.BoostUntil)
 		refreshPlot(p)
 		notify(p, "Daily reward: 2x income for " .. (r.Seconds // 3600) .. "h!")
-
 	elseif r.Kind == "Mon" then
 		if #s.Inventory >= Config.INV_MAX then
 			notify(p, "Your inventory is full! Sell something, then claim your Day " .. day .. " reward.")
@@ -1743,7 +2004,9 @@ end
 
 DailyRF.OnServerInvoke = function(p, action, day)
 	local s = State[p]
-	if not s or not s.Loaded then return nil end
+	if not s or not s.Loaded then
+		return nil
+	end
 
 	dailyRefresh(s)
 	if action == "claim" and type(day) == "number" and day % 1 == 0 and day >= 1 and day <= 7 then
@@ -1763,7 +2026,9 @@ end
 ---------------------------------------------------------------------
 local function grantPass(p, name)
 	local s = State[p]
-	if not s then return end
+	if not s then
+		return
+	end
 	s.Passes[name] = true
 	p:SetAttribute("Pass_" .. name, true)
 	refreshPlot(p)
@@ -1784,9 +2049,13 @@ end
 
 local function teleport(p)
 	local s = State[p]
-	if not s or not s.Plot then return end
+	if not s or not s.Plot then
+		return
+	end
 	local char = p.Character
-	if not char then return end
+	if not char then
+		return
+	end
 	local hrp = char:WaitForChild("HumanoidRootPart", 5)
 	if hrp then
 		char:PivotTo(s.Plot.Spawn)
@@ -1794,11 +2063,13 @@ local function teleport(p)
 end
 
 -- HUD "BASE" pop-up and BASE button (SlopClient). The server does the move, so it only ever goes to your own plot.
-local lastHome = {}   -- [player] = os.clock() of the last teleport
+local lastHome = {} -- [player] = os.clock() of the last teleport
 Remote.OnServerEvent:Connect(function(p, action)
 	if action == "home" then
 		local now = os.clock()
-		if now - (lastHome[p] or 0) < 1 then return end
+		if now - (lastHome[p] or 0) < 1 then
+			return
+		end
 		lastHome[p] = now
 		teleport(p)
 	end
@@ -1835,7 +2106,7 @@ local function onJoin(p)
 
 	if s.Plot then
 		s.Plot.OwnerLabel.Text = p.DisplayName .. "'s Base"
-		p:SetAttribute("PlotCenter", Vector3.new(s.Plot.CX, 0, s.Plot.CZ))   -- SlopClient shows "TP TO BASE" when far from it
+		p:SetAttribute("PlotCenter", Vector3.new(s.Plot.CX, 0, s.Plot.CZ)) -- SlopClient shows "TP TO BASE" when far from it
 		refreshPlot(p)
 		refreshMachine(p)
 	else
@@ -1896,7 +2167,7 @@ task.spawn(function()
 		task.wait(1)
 		-- tank countdown bars (PlotClient) restart from this shared server time
 		world1:SetAttribute("IncomeTick", Workspace:GetServerTimeNow())
-		local drops = {}   -- { { P = plot index, V = { value per Slop } } } for PlotClient
+		local drops = {} -- { { P = plot index, V = { value per Slop } } } for PlotClient
 		for p, s in pairs(State) do
 			if p.Parent and p:FindFirstChild("leaderstats") then
 				if s.BoostUntil > 0 and s.BoostUntil <= os.time() then
@@ -1946,7 +2217,9 @@ end)
 local function onPad(p, plot)
 	local char = p.Character
 	local hrp = char and char:FindFirstChild("HumanoidRootPart")
-	if not hrp then return false end
+	if not hrp then
+		return false
+	end
 	local d = hrp.Position - plot.PadCenter
 	return math.abs(d.X) <= PAD_W / 2 + 0.5 and math.abs(d.Z) <= PAD_D / 2 + 0.5 and d.Y < 8
 end
@@ -1955,10 +2228,12 @@ end
 local function collectAtm(p)
 	local s = State[p]
 	local amount = math.floor(s.AtmCash)
-	if amount < 1 then return end
+	if amount < 1 then
+		return
+	end
 	s.AtmCash -= amount
 	setCash(p, getCash(p) + amount)
-	addStat(p, "TotalCash", amount)       -- cash counts as earned when collected
+	addStat(p, "TotalCash", amount) -- cash counts as earned when collected
 	addStat(p, "CashThisRebirth", amount)
 	Remote:FireClient(p, "collect", amount)
 end
@@ -1998,7 +2273,9 @@ local EVENT_KINDS = { "AdminAbuse", "Rain", "BeltRush", "LuckyBlock" }
 
 -- Runs one server event and waits until it ends. Returns false if another event is already running.
 local function runEvent(kind)
-	if eventRunning then return false end
+	if eventRunning then
+		return false
+	end
 	eventRunning = true
 	if kind == "AdminAbuse" then
 		adminMult = 5
@@ -2053,7 +2330,9 @@ end)
 -- Monetization: Game Passes + Developer Products
 ---------------------------------------------------------------------
 MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(p, passId, purchased)
-	if not purchased or not State[p] then return end
+	if not purchased or not State[p] then
+		return
+	end
 	for name, id in pairs(Config.Passes) do
 		if id ~= 0 and id == passId then
 			grantPass(p, name)
@@ -2111,7 +2390,11 @@ MarketplaceService.ProcessReceipt = function(info)
 		s.OfflineDoubled = true
 		notify(p, "Offline rewards doubled!")
 	else
-		warn("[Slop] Receipt not processed: ProductId " .. tostring(id) .. " does not match CashSmall/CashBig/Boost in SlopConfig.Products.")
+		warn(
+			"[Slop] Receipt not processed: ProductId "
+				.. tostring(id)
+				.. " does not match CashSmall/CashBig/Boost in SlopConfig.Products."
+		)
 		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
 
@@ -2134,17 +2417,23 @@ end
 
 local function devAmount(v)
 	v = tonumber(v)
-	if not v or v ~= v or v <= 0 or v == math.huge then return nil end
+	if not v or v ~= v or v <= 0 or v == math.huge then
+		return nil
+	end
 	return math.floor(v)
 end
 
 DevRF.OnServerInvoke = function(p, action, a, b)
-	if not isDev(p) then return false end
+	if not isDev(p) then
+		return false
+	end
 	if action == "check" then
 		return { BlockSave = Config.DEV_BLOCK_SAVE }
 	end
 	local s = State[p]
-	if not s or not s.Plot then return false end
+	if not s or not s.Plot then
+		return false
+	end
 	if Config.DEV_BLOCK_SAVE then
 		s.Cheated = true
 	end
@@ -2155,7 +2444,6 @@ DevRF.OnServerInvoke = function(p, action, a, b)
 			setCash(p, getCash(p) + v)
 			notify(p, "[DEV] +$" .. Config.Format(v))
 		end
-
 	elseif action == "atm" then
 		local v = devAmount(a)
 		if v then
@@ -2163,7 +2451,6 @@ DevRF.OnServerInvoke = function(p, action, a, b)
 			updateAtm(p)
 			notify(p, "[DEV] +$" .. Config.Format(v) .. " in the ATM")
 		end
-
 	elseif action == "tokens" then
 		local v = devAmount(a)
 		if v then
@@ -2171,7 +2458,6 @@ DevRF.OnServerInvoke = function(p, action, a, b)
 			p:SetAttribute("Tokens", s.Tokens)
 			notify(p, "[DEV] +" .. Config.Format(v) .. " tokens")
 		end
-
 	elseif action == "slop" then
 		local idx = tonumber(a)
 		if idx and Config.Mons[idx] then
@@ -2185,19 +2471,16 @@ DevRF.OnServerInvoke = function(p, action, a, b)
 				notify(p, "[DEV] " .. Config.Mons[idx].Name .. " added to inventory")
 			end
 		end
-
 	elseif action == "rebirth" then
 		s.Rebirths += 1
 		p.leaderstats.Rebirths.Value = s.Rebirths
 		refreshPlot(p)
 		notify(p, "[DEV] Rebirths: " .. s.Rebirths)
-
 	elseif action == "resetRebirths" then
 		s.Rebirths = 0
 		p.leaderstats.Rebirths.Value = 0
 		refreshPlot(p)
 		notify(p, "[DEV] Rebirths reset to 0")
-
 	elseif action == "maxSlots" then
 		-- every Slop Spot unlocked, so all 16 tanks can be checked; "resetUpgrades" undoes it
 		while s.Slots < MAX_SLOTS do
@@ -2206,18 +2489,16 @@ DevRF.OnServerInvoke = function(p, action, a, b)
 		end
 		refreshPlot(p)
 		notify(p, "[DEV] All " .. MAX_SLOTS .. " Slop Spots unlocked")
-
 	elseif action == "cooldown" then
 		s.NextRoll = 0
 		notify(p, "[DEV] Roll cooldown cleared")
-
 	elseif action == "resetUpgrades" then
 		-- Every purchased upgrade back to its starting value. Rebirths have their own reset button.
 		-- ADD NEW UPGRADES HERE (Slop shop, stars, ...) so this keeps resetting everything.
 		for k = #s.Owned, START_SLOTS + 1, -1 do
 			local sl = table.remove(s.Owned, k)
 			if sl ~= 0 then
-				table.insert(s.Inventory, sl)   -- Slops on removed spots go back to inventory
+				table.insert(s.Inventory, sl) -- Slops on removed spots go back to inventory
 			end
 		end
 		s.Slots = START_SLOTS
@@ -2226,7 +2507,6 @@ DevRF.OnServerInvoke = function(p, action, a, b)
 		s.SpeedLevel = 0
 		refreshPlot(p)
 		notify(p, "[DEV] All upgrades reset")
-
 	elseif action == "event" then
 		if table.find(EVENT_KINDS, a) then
 			if eventRunning then

@@ -23,7 +23,8 @@ Roblox tycoon game (Luau) with brainrot-style "Slop" characters. The owner is no
   - `rojo build -o build-check.rbxl` (the root `*.rbxl` is gitignored)
   - `selene src`
   - `stylua --check src`
-- **Current status (2026-11-08):** the existing code does not pass yet (selene: 61 warnings, 0 errors; stylua: every script would be reformatted). Until the owner approves a cleanup, a task counts as done if it adds no new selene warnings and its new or changed code is stylua-formatted. Remove this note once the cleanup lands.
+- All three pass on the current code (cleanup of 2026-11-08). Keep it that way: run `stylua src` to format before checking.
+- Lined-up tables in `SlopConfig` (`Rarities`, `Mons`, `DailyRewards`) sit between `-- stylua: ignore start` / `-- stylua: ignore end` so they keep one row per entry. Keep new rows lined up by hand.
 - **Config centralization:** move as much config as possible into the single shared config module, `src/ReplicatedStorage/SlopConfig.luau`. Tunable values (speeds, costs, timers, jump power, etc.) live there and are never hardcoded in scripts. Many constants are still hardcoded today (for example the top of `SlopServer` and `PlotClient`); move them when you touch that code.
 - **Secrets:** never commit API keys or secrets. Put them in `.env` (gitignored) and read them from there.
 

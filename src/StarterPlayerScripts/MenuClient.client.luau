@@ -42,21 +42,23 @@ local winScale = win:FindFirstChildOfClass("UIScale")
 ---------------------------------------------------------------------
 -- State
 ---------------------------------------------------------------------
-local state, fetchedAt, busy = nil, 0, false
-local sel = nil            -- { kind = "inv" | "eq", key = index }
-local swapFrom = nil       -- inventory index waiting for an equipped Slop to replace
+local state, busy = nil, false
+local sel = nil -- { kind = "inv" | "eq", key = index }
+local swapFrom = nil -- inventory index waiting for an equipped Slop to replace
 local sortKey, sortDesc = "Rarity", true
 local render
 
 local function call(action, a, b)
-	if busy then return nil end
+	if busy then
+		return nil
+	end
 	busy = true
 	local ok, st = pcall(function()
 		return Menu:InvokeServer(action, a, b)
 	end)
 	busy = false
 	if ok and st then
-		state, fetchedAt = st, os.clock()
+		state = st
 		render()
 		return st
 	end
@@ -81,7 +83,9 @@ local function fitGrid(n, w, h, gap, minSize, maxSize)
 	for cols = 1, math.max(1, n) do
 		local rows = math.ceil(n / cols)
 		local size = math.min((w - (cols - 1) * gap) / cols, (h - (rows - 1) * gap) / rows)
-		if size > best then best = size end
+		if size > best then
+			best = size
+		end
 	end
 	return math.floor(math.clamp(best, minSize, maxSize))
 end
@@ -97,12 +101,12 @@ tip.ZIndex = 100
 tip.Parent = gui
 corner(tip, UDim.new(0, 12))
 stroke(tip, 4)
-local tipName   = label(tip, "", UDim2.new(1, -16, 0, 30), UDim2.fromOffset(8, 6), WHITE, true)
+local tipName = label(tip, "", UDim2.new(1, -16, 0, 30), UDim2.fromOffset(8, 6), WHITE, true)
 local tipRarity = label(tip, "", UDim2.new(1, -16, 0, 24), UDim2.fromOffset(8, 38), WHITE, true)
-local tipTier   = label(tip, "", UDim2.new(1, -16, 0, 24), UDim2.fromOffset(8, 66), WHITE, true)
+local tipTier = label(tip, "", UDim2.new(1, -16, 0, 24), UDim2.fromOffset(8, 66), WHITE, true)
 local tipIncome = label(tip, "", UDim2.new(1, -16, 0, 24), UDim2.fromOffset(8, 94), GREEN_TEXT, true)
-local tipValue  = label(tip, "", UDim2.new(1, -16, 0, 24), UDim2.fromOffset(8, 122), COL.Text)
-local tipType   = label(tip, "", UDim2.new(1, -16, 0, 22), UDim2.fromOffset(8, 148), COL.Text)
+local tipValue = label(tip, "", UDim2.new(1, -16, 0, 24), UDim2.fromOffset(8, 122), COL.Text)
+local tipType = label(tip, "", UDim2.new(1, -16, 0, 22), UDim2.fromOffset(8, 148), COL.Text)
 
 local function moveTip()
 	local mp = UserInputService:GetMouseLocation()
@@ -143,8 +147,17 @@ local function slopCard(parent, sl, size, opts)
 	corner(b, UDim.new(0, 12))
 	stroke(b, opts.highlight and 5 or 3, opts.highlight or COL.Outline)
 	label(b, m.Emoji, UDim2.fromScale(0.7, 0.55), UDim2.fromScale(0.15, 0.05), WHITE)
-	label(b, opts.bottom or "", UDim2.fromScale(0.9, 0.24), UDim2.fromScale(0.05, 0.69), opts.bottomColor or WHITE, true)
-	b.MouseEnter:Connect(function() showTip(sl, opts.tipValue or "") end)
+	label(
+		b,
+		opts.bottom or "",
+		UDim2.fromScale(0.9, 0.24),
+		UDim2.fromScale(0.05, 0.69),
+		opts.bottomColor or WHITE,
+		true
+	)
+	b.MouseEnter:Connect(function()
+		showTip(sl, opts.tipValue or "")
+	end)
 	b.MouseMoved:Connect(moveTip)
 	b.MouseLeave:Connect(hideTip)
 	if opts.onClick then
@@ -165,14 +178,14 @@ panel.Parent = win
 corner(panel, UDim.new(0, 20))
 stroke(panel, 5)
 
-local pEmoji  = label(panel, "", UDim2.new(1, -120, 0, 80), UDim2.fromOffset(60, 10), WHITE)
-local pName   = label(panel, "", UDim2.new(1, -24, 0, 38), UDim2.fromOffset(12, 96), WHITE, true)
+local pEmoji = label(panel, "", UDim2.new(1, -120, 0, 80), UDim2.fromOffset(60, 10), WHITE)
+local pName = label(panel, "", UDim2.new(1, -24, 0, 38), UDim2.fromOffset(12, 96), WHITE, true)
 local pRarity = label(panel, "", UDim2.new(1, -24, 0, 28), UDim2.fromOffset(12, 136), WHITE, true)
-local pTier   = label(panel, "", UDim2.new(1, -24, 0, 28), UDim2.fromOffset(12, 166), WHITE, true)
+local pTier = label(panel, "", UDim2.new(1, -24, 0, 28), UDim2.fromOffset(12, 166), WHITE, true)
 local pIncome = label(panel, "", UDim2.new(1, -24, 0, 26), UDim2.fromOffset(12, 206), GREEN_TEXT, true)
-local pValue  = label(panel, "", UDim2.new(1, -24, 0, 26), UDim2.fromOffset(12, 236), COL.Text)
-local pType   = label(panel, "", UDim2.new(1, -24, 0, 24), UDim2.fromOffset(12, 266), COL.Text)
-local pHint   = label(panel, "", UDim2.new(1, -24, 0, 44), UDim2.fromOffset(12, 296), Color3.fromRGB(232, 140, 40), true)
+local pValue = label(panel, "", UDim2.new(1, -24, 0, 26), UDim2.fromOffset(12, 236), COL.Text)
+local pType = label(panel, "", UDim2.new(1, -24, 0, 24), UDim2.fromOffset(12, 266), COL.Text)
+local pHint = label(panel, "", UDim2.new(1, -24, 0, 44), UDim2.fromOffset(12, 296), Color3.fromRGB(232, 140, 40), true)
 pHint.TextWrapped = true
 
 local btn1 = UI.button(panel, "", UDim2.fromOffset(PANEL_W - 32, 54), UDim2.fromOffset(16, 350), COL.Green)
@@ -192,16 +205,23 @@ stroke(panelX, 3)
 
 local panelOpen = false
 local function setPanel(open)
-	if open == panelOpen then return end
+	if open == panelOpen then
+		return
+	end
 	panelOpen = open
 	panel.Visible = open
 	local shift = open and (SLIDE / 2) * winScale.Scale or 0
-	TweenService:Create(win, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-		{ Position = UDim2.new(0.5, -shift, 0.5, 0) }):Play()
+	TweenService:Create(
+		win,
+		TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ Position = UDim2.new(0.5, -shift, 0.5, 0) }
+	):Play()
 end
 
 local function selectedSlop()
-	if not sel or not state then return nil end
+	if not sel or not state then
+		return nil
+	end
 	if sel.kind == "inv" then
 		return state.Inventory[sel.key]
 	elseif sel.kind == "eq" then
@@ -291,7 +311,9 @@ yesBtn.Activated:Connect(function()
 	overlay.Visible = false
 	local f = pendingSell
 	pendingSell = nil
-	if f then f() end
+	if f then
+		f()
+	end
 end)
 noBtn.Activated:Connect(function()
 	overlay.Visible = false
@@ -302,7 +324,9 @@ end)
 -- Panel buttons
 ---------------------------------------------------------------------
 btn1.Activated:Connect(function()
-	if not sel or not state then return end
+	if not sel or not state then
+		return
+	end
 	if sel.kind == "inv" then
 		if swapFrom then
 			swapFrom = nil
@@ -311,7 +335,10 @@ btn1.Activated:Connect(function()
 		end
 		local free = false
 		for k = 1, state.Slots do
-			if type(state.Owned[k]) ~= "table" then free = true break end
+			if type(state.Owned[k]) ~= "table" then
+				free = true
+				break
+			end
 		end
 		if free then
 			local i = sel.key
@@ -329,9 +356,13 @@ btn1.Activated:Connect(function()
 end)
 
 btn2.Activated:Connect(function()
-	if not sel or not state then return end
+	if not sel or not state then
+		return
+	end
 	local sl = selectedSlop()
-	if not sl then return end
+	if not sl then
+		return
+	end
 	local kind, key = sel.kind, sel.key
 	confirmSell(sl, function()
 		sel = nil
@@ -394,30 +425,48 @@ local SORTS = { "Rarity", "Multiplier", "Income", "Value", "Type", "Name", "Newe
 
 local function sortValue(sl, key)
 	local m = Config.Mons[sl.Id]
-	if key == "Rarity" then return m.Rarity
-	elseif key == "Multiplier" then return sl.Mult
-	elseif key == "Income" then return incomeOf(sl)
-	elseif key == "Value" then return m.Price
-	elseif key == "Type" then return tostring(m.Type or "None")
-	elseif key == "Name" then return m.Name
+	if key == "Rarity" then
+		return m.Rarity
+	elseif key == "Multiplier" then
+		return sl.Mult
+	elseif key == "Income" then
+		return incomeOf(sl)
+	elseif key == "Value" then
+		return m.Price
+	elseif key == "Type" then
+		return tostring(m.Type or "None")
+	elseif key == "Name" then
+		return m.Name
 	end
 	return 0
 end
 
 local function sortedIndices()
 	local order = {}
-	for i in ipairs(state.Inventory) do order[i] = i end
+	for i in ipairs(state.Inventory) do
+		order[i] = i
+	end
 	table.sort(order, function(a, b)
 		if sortKey == "Newest" then
-			if sortDesc then return a > b else return a < b end
+			if sortDesc then
+				return a > b
+			else
+				return a < b
+			end
 		end
 		local sa, sb = state.Inventory[a], state.Inventory[b]
 		local va, vb = sortValue(sa, sortKey), sortValue(sb, sortKey)
 		if va ~= vb then
-			if sortDesc then return va > vb else return va < vb end
+			if sortDesc then
+				return va > vb
+			else
+				return va < vb
+			end
 		end
 		local ia, ib = incomeOf(sa), incomeOf(sb)
-		if ia ~= ib then return ia > ib end     -- ties: higher income first
+		if ia ~= ib then
+			return ia > ib
+		end -- ties: higher income first
 		return a < b
 	end)
 	return order
@@ -466,10 +515,18 @@ local rows = {
 	cap = makeRow(252, "Roll Cap"),
 	speed = makeRow(358, "Faster Rolls"),
 }
-rows.slots.btn.Activated:Connect(function() call("buySlot") end)
-rows.rolls.btn.Activated:Connect(function() call("upgradeRolls") end)
-rows.cap.btn.Activated:Connect(function() call("upgradeCap") end)
-rows.speed.btn.Activated:Connect(function() call("upgradeSpeed") end)
+rows.slots.btn.Activated:Connect(function()
+	call("buySlot")
+end)
+rows.rolls.btn.Activated:Connect(function()
+	call("upgradeRolls")
+end)
+rows.cap.btn.Activated:Connect(function()
+	call("upgradeCap")
+end)
+rows.speed.btn.Activated:Connect(function()
+	call("upgradeSpeed")
+end)
 
 local function setRow(r, desc, cost, kind, maxed)
 	r.desc.Text = desc
@@ -490,15 +547,60 @@ end
 -- `s` is the server snapshot: s.Stats.<Key> holds anything listed in Config.DefaultStats.
 -- The page fits 10 rows (row 11 would overflow); beyond that, make pages.Stats a ScrollingFrame.
 local STAT_DEFS = {
-	{ "Total cash earned",          function(s) return "$" .. Config.Format(s.Stats.TotalCash) end },
-	{ "Cash this Life",          function(s) return "$" .. Config.Format(s.Stats.CashThisRebirth) end },
-	{ "Highest Cash in a single Life",   function(s) return "$" .. Config.Format(s.Stats.MaxCashInRebirth) end },
-	{ "Total Slops rolled",               function(s) return Config.Format(s.Stats.SlopsRolled) end },
-	{ "Total Slops purchased",            function(s) return Config.Format(s.Stats.SlopsPurchased) end },
-	{ "Slops discovered",           function(s) return s.Discovered .. " / " .. s.TotalSlops end },
-	{ "Best Income in a single Life",     function(s) return "$" .. Config.Format(s.Stats.MaxIncome) end },
-	{ "Most Tokens Awarded for a Rebirth", function(s) return Config.Format(s.Stats.MaxTokens) end },
-	{ "Rebirths",                   function() return tostring(player.leaderstats.Rebirths.Value) end },
+	{
+		"Total cash earned",
+		function(s)
+			return "$" .. Config.Format(s.Stats.TotalCash)
+		end,
+	},
+	{
+		"Cash this Life",
+		function(s)
+			return "$" .. Config.Format(s.Stats.CashThisRebirth)
+		end,
+	},
+	{
+		"Highest Cash in a single Life",
+		function(s)
+			return "$" .. Config.Format(s.Stats.MaxCashInRebirth)
+		end,
+	},
+	{
+		"Total Slops rolled",
+		function(s)
+			return Config.Format(s.Stats.SlopsRolled)
+		end,
+	},
+	{
+		"Total Slops purchased",
+		function(s)
+			return Config.Format(s.Stats.SlopsPurchased)
+		end,
+	},
+	{
+		"Slops discovered",
+		function(s)
+			return s.Discovered .. " / " .. s.TotalSlops
+		end,
+	},
+	{
+		"Best Income in a single Life",
+		function(s)
+			return "$" .. Config.Format(s.Stats.MaxIncome)
+		end,
+	},
+	{
+		"Most Tokens Awarded for a Rebirth",
+		function(s)
+			return Config.Format(s.Stats.MaxTokens)
+		end,
+	},
+	{
+		"Rebirths",
+		function()
+			return tostring(player.leaderstats.Rebirths.Value)
+		end,
+	},
 }
 local statValues = {}
 for i, def in ipairs(STAT_DEFS) do
@@ -520,12 +622,18 @@ end
 -- Render
 ---------------------------------------------------------------------
 render = function()
-	if not state then return end
+	if not state then
+		return
+	end
 	hideTip()
 	local W = Config.Wheel
 
-	if sel and not selectedSlop() then sel = nil end
-	if swapFrom and not state.Inventory[swapFrom] then swapFrom = nil end
+	if sel and not selectedSlop() then
+		sel = nil
+	end
+	if swapFrom and not state.Inventory[swapFrom] then
+		swapFrom = nil
+	end
 
 	-- equipped
 	clear(equipFrame)
@@ -601,20 +709,40 @@ render = function()
 	invLabel.Text = string.format("Inventory %d/%d", #state.Inventory, Config.INV_MAX)
 	sortBtn.Text = "Sort: " .. sortKey
 	orderBtn.Text = sortDesc and "DESC" or "ASC"
-	
+
 	for i, def in ipairs(STAT_DEFS) do
 		statValues[i].Text = def[2](state)
 	end
 	-- upgrades
 	tokenLabel.Text = "🪙 Rebirth Tokens: " .. Config.Format(state.Tokens)
-	setRow(rows.slots, string.format("Equip more Slops. Spots: %d / 16", state.Slots),
-		Config.SlotCost(state.Slots), "tokens", state.Slots >= 16)
-	setRow(rows.rolls, string.format("Slot reels: %d (cap %d). Each upgrade unlocks a reel.", state.RollCount, state.RollCap),
-		Config.RollUpgradeCost(state.RollCount), "cash", state.RollCount >= state.RollCap)
-	setRow(rows.cap, string.format("Raise the reel cap: %d -> %d (max %d)", state.RollCap, state.RollCap + 1, W.CapMax),
-		Config.CapUpgradeCost(state.RollCap), "tokens", state.RollCap >= W.CapMax)
-	setRow(rows.speed, string.format("Cooldown %.1fs -> %.1fs", state.Cooldown, Config.RollCooldown(state.SpeedLevel + 1)),
-		Config.SpeedUpgradeCost(state.SpeedLevel), "tokens", state.SpeedLevel >= W.SpeedLevels)
+	setRow(
+		rows.slots,
+		string.format("Equip more Slops. Spots: %d / 16", state.Slots),
+		Config.SlotCost(state.Slots),
+		"tokens",
+		state.Slots >= 16
+	)
+	setRow(
+		rows.rolls,
+		string.format("Slot reels: %d (cap %d). Each upgrade unlocks a reel.", state.RollCount, state.RollCap),
+		Config.RollUpgradeCost(state.RollCount),
+		"cash",
+		state.RollCount >= state.RollCap
+	)
+	setRow(
+		rows.cap,
+		string.format("Raise the reel cap: %d -> %d (max %d)", state.RollCap, state.RollCap + 1, W.CapMax),
+		Config.CapUpgradeCost(state.RollCap),
+		"tokens",
+		state.RollCap >= W.CapMax
+	)
+	setRow(
+		rows.speed,
+		string.format("Cooldown %.1fs -> %.1fs", state.Cooldown, Config.RollCooldown(state.SpeedLevel + 1)),
+		Config.SpeedUpgradeCost(state.SpeedLevel),
+		"tokens",
+		state.SpeedLevel >= W.SpeedLevels
+	)
 
 	updatePanel()
 end
@@ -627,7 +755,7 @@ for _, name in ipairs({ "Inventory", "Upgrades", "Stats" }) do
 		sel = nil
 		swapFrom = nil
 		if pages[name].Visible then
-			call("get")          -- refresh tokens and stats whenever a tab opens
+			call("get") -- refresh tokens and stats whenever a tab opens
 		elseif state then
 			render()
 		end

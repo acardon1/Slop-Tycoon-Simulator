@@ -3,6 +3,11 @@
 
 local Config = {}
 
+-- The "stylua: ignore" markers below keep these tables as one lined-up row per entry.
+-- Without them StyLua spreads each entry over many lines.
+-- To reverse: delete the "-- stylua: ignore start" / "-- stylua: ignore end" lines and run `stylua src`.
+
+-- stylua: ignore start
 Config.Rarities = {
 	{ Name = "Common",    Color = Color3.fromRGB(127, 152, 166), Weight = 60 },
 	{ Name = "Rare",      Color = Color3.fromRGB(47, 147, 232),  Weight = 25 },
@@ -12,8 +17,10 @@ Config.Rarities = {
 	{ Name = "SECRET",    Color = Color3.fromRGB(255, 255, 255), Weight = 0.3 }, -- rainbow in-game
 	{ Name = "Special", Color = Color3.fromRGB(255, 120, 200), Weight = 0 }, -- Event only exclusives
 }
+-- stylua: ignore end
 
 -- Rarity is an index into Config.Rarities
+-- stylua: ignore start
 Config.Mons = {
 	{ Name = "Noodlefish Barrelo",   Emoji = "🐟", Rarity = 1, Price = 50,       Income = 1, Model = "Barrelo", ModelHeight = 4 },
 	{ Name = "Rizzbert the Frog",    Emoji = "🐸", Rarity = 1, Price = 120,      Income = 3, Model = "FrogChair", ModelHeight = 4 },
@@ -30,9 +37,11 @@ Config.Mons = {
 	{ Name = "THE ONE BLOCK",        Emoji = "🟨", Rarity = 6, Price = 10000000, Income = 400000, Model = "Ring", ModelHeight = 4 },
 	{ Name = "Daily Drip Dino", Emoji = "🦖", Rarity = 7, Price = 1000000, Income = 25000, Model = "DailyDino", ModelHeight = 4 },
 }
+-- stylua: ignore end
 
 Config.SpecialPool = { 14 }
 
+-- stylua: ignore start
 Config.DailyRewards = {
 	[1] = { Kind = "Cash", First = 250,  Pct = 0.25, Min = 250,  Emoji = "💵", Text = "Quick Cash", FirstText = "$250" },
 	[2] = { Kind = "Cash", First = 1000, Pct = 0.50, Min = 1000, Emoji = "💰", Text = "BIG Cash", FirstText = "$1000" },
@@ -43,18 +52,19 @@ Config.DailyRewards = {
 	[7] = { Kind = "Mon", FirstIdx = 14, Pool = Config.SpecialPool,
 		Emoji = "🎁", Text = "Special Slop", FirstEmoji = "🦖", FirstText = "Daily Drip Dino" },
 }
+-- stylua: ignore end
 
 Config.Badges = {
-	Welcome = 758648761145262, 	--join the game
-	FirstExpand = 80377063974812,	--first slop spot
-	FirstSlop = 3326706043723622,	--buy first slop
-	Legendary = 1584927148149870,	--buy a legendary slop
-	FirstRebirth = 2255879886089870,	--rebirth first time
-	Mythic = 2314593998507058,        -- buy a Mythic Slop
-	Secret = 4021308275331040,        -- buy a SECRET Slop
-	MaxedSpots = 1219058499510125,    -- unlock every Slop Spot
-	FullPlot = 41422785915715,      -- every Slop Spot unlocked and filled
-	Rebirth5 = 3718036976376138,      -- 5th rebirth (unlocks the second world)
+	Welcome = 758648761145262, --join the game
+	FirstExpand = 80377063974812, --first slop spot
+	FirstSlop = 3326706043723622, --buy first slop
+	Legendary = 1584927148149870, --buy a legendary slop
+	FirstRebirth = 2255879886089870, --rebirth first time
+	Mythic = 2314593998507058, -- buy a Mythic Slop
+	Secret = 4021308275331040, -- buy a SECRET Slop
+	MaxedSpots = 1219058499510125, -- unlock every Slop Spot
+	FullPlot = 41422785915715, -- every Slop Spot unlocked and filled
+	Rebirth5 = 3718036976376138, -- 5th rebirth (unlocks the second world)
 }
 
 -- DEVTOOLS: the DEV cheat panel always shows in Studio.
@@ -66,17 +76,17 @@ Config.DEV_BLOCK_SAVE = true
 
 Config.DATA_VERSION = 3
 Config.BUY_TO_INVENTORY = true
-Config.INV_MAX = 300             -- keeps saves small
-Config.TOKEN_RATE = 0.00002      -- 0.002% of cash earned this rebirth
+Config.INV_MAX = 300 -- keeps saves small
+Config.TOKEN_RATE = 0.00002 -- 0.002% of cash earned this rebirth
 
 -- Cash multiplier rolled for every new Slop: uniform x1.00 - x1.25
 Config.MULT_MIN, Config.MULT_MAX = 1, 1.25
 Config.MultTiers = {
-	{ Name = "Normal",    Min = 1.00, Color = Color3.fromRGB(150, 155, 165) },
-	{ Name = "Good",      Min = 1.10, Color = Color3.fromRGB(86, 176, 96) },
-	{ Name = "Great",     Min = 1.17, Color = Color3.fromRGB(47, 147, 232) },
+	{ Name = "Normal", Min = 1.00, Color = Color3.fromRGB(150, 155, 165) },
+	{ Name = "Good", Min = 1.10, Color = Color3.fromRGB(86, 176, 96) },
+	{ Name = "Great", Min = 1.17, Color = Color3.fromRGB(47, 147, 232) },
 	{ Name = "Excellent", Min = 1.22, Color = Color3.fromRGB(162, 79, 224) },
-	{ Name = "Perfect",   Min = 1.25, Color = Color3.fromRGB(240, 165, 0) },
+	{ Name = "Perfect", Min = 1.25, Color = Color3.fromRGB(240, 165, 0) },
 }
 
 -- Default stats for every Slop; override per entry later (DropTime, BaseCash, CashMult, Type)
@@ -86,7 +96,6 @@ for _, m in ipairs(Config.Mons) do
 	m.CashMult = m.CashMult or 1
 	m.Type = m.Type or "None"
 end
-
 
 -- HOW TO ADD A STAT:
 -- 1. Add its key below with a starting value of 0. It saves automatically, and old saves start it at 0.
@@ -113,7 +122,9 @@ end
 function Config.MultTier(m)
 	local t = Config.MultTiers[1]
 	for _, tier in ipairs(Config.MultTiers) do
-		if m >= tier.Min then t = tier end
+		if m >= tier.Min then
+			t = tier
+		end
 	end
 	return t
 end
@@ -121,9 +132,13 @@ end
 -- Wheel (costs below are placeholders)
 -- Roll cooldown: 10s -> 5s in 1s steps (first MidLevel upgrades), then 5s -> 1s in equal steps (0.4s).
 Config.Wheel = {
-	CapStart = 3, CapMax = 10,
-	CooldownStart = 10, CooldownMid = 5, CooldownMin = 1,
-	MidLevel = 5, SpeedLevels = 15,
+	CapStart = 3,
+	CapMax = 10,
+	CooldownStart = 10,
+	CooldownMid = 5,
+	CooldownMin = 1,
+	MidLevel = 5,
+	SpeedLevels = 15,
 }
 
 -- Slot machine (replaces the wheel UI). One reel unlocks per roll upgrade.
@@ -134,11 +149,11 @@ Config.Slot = {
 	Reels = 10,
 	RollNumber = { 9, 7, 5, 3, 1, 2, 4, 6, 8, 10 },
 	SpinTime = 1,
-	TickTime = 0.07,        -- seconds per face flip while a reel spins
-	OfferModels = true,     -- false = plain cubes in front of the reels (cheaper)
+	TickTime = 0.07, -- seconds per face flip while a reel spins
+	OfferModels = true, -- false = plain cubes in front of the reels (cheaper)
 	OfferHeight = 2.6,
 }
-Config.Slot.ReelOrder = {}                       -- ReelOrder[roll] = reel (derived; used by server + client)
+Config.Slot.ReelOrder = {} -- ReelOrder[roll] = reel (derived; used by server + client)
 for reel, roll in ipairs(Config.Slot.RollNumber) do
 	Config.Slot.ReelOrder[roll] = reel
 end
@@ -152,10 +167,18 @@ function Config.RollCooldown(level)
 	return w.CooldownMid - (level - w.MidLevel) * (w.CooldownMid - w.CooldownMin) / (w.SpeedLevels - w.MidLevel)
 end
 
-function Config.RollUpgradeCost(n)  return 5000 * 5 ^ (n - 1) end                 -- cash: n -> n+1 rolls
-function Config.CapUpgradeCost(cap) return 50 * 2 ^ (cap - Config.Wheel.CapStart) end -- tokens
-function Config.SpeedUpgradeCost(l) return math.floor(20 * 1.6 ^ l) end             -- tokens
-function Config.SlotCost(slots)     return 25 * 2 ^ (slots - 5) end                 -- tokens
+function Config.RollUpgradeCost(n)
+	return 5000 * 5 ^ (n - 1)
+end -- cash: n -> n+1 rolls
+function Config.CapUpgradeCost(cap)
+	return 50 * 2 ^ (cap - Config.Wheel.CapStart)
+end -- tokens
+function Config.SpeedUpgradeCost(l)
+	return math.floor(20 * 1.6 ^ l)
+end -- tokens
+function Config.SlotCost(slots)
+	return 25 * 2 ^ (slots - 5)
+end -- tokens
 
 function Config.Mult(rebirths)
 	return 1 + 0.75 * rebirths
@@ -185,13 +208,13 @@ end
 -- then paste the numeric IDs here. Anything left at 0 is hidden/disabled.
 Config.Passes = {
 	DoubleCash = 2037824275, -- Game Pass: x2 income and slaps, forever
-	AutoSlap   = 2037368267, -- Game Pass: slaps for you every second
+	AutoSlap = 2037368267, -- Game Pass: slaps for you every second
 }
 Config.Products = {
-	CashSmall = 3718484283,  -- Developer Product: 5 minutes of income
-	CashBig   = 3718484392,  -- Developer Product: 1 hour of income
-	Boost     = 3718484154,  -- Developer Product: 2x income for 15 minutes
-	DoubleOffline = 3721014660,       -- Developer Product: doubles offline rewards when claimed
+	CashSmall = 3718484283, -- Developer Product: 5 minutes of income
+	CashBig = 3718484392, -- Developer Product: 1 hour of income
+	Boost = 3718484154, -- Developer Product: 2x income for 15 minutes
+	DoubleOffline = 3721014660, -- Developer Product: doubles offline rewards when claimed
 }
 
 Config.BOOST_SECONDS = 900
@@ -200,11 +223,16 @@ Config.CASH_BIG_SECONDS, Config.CASH_BIG_MIN = 3600, 25000
 
 -- What the in-game shop shows (Kind is "Pass" or "Product")
 Config.ShopItems = {
-	{ Kind = "Pass",    Key = "DoubleCash", Title = "2x Cash",    Desc = "Double all income and slaps. Permanent." },
-	{ Kind = "Pass",    Key = "AutoSlap",   Title = "Auto Slap",  Desc = "Slaps the ground for you every second. Permanent." },
-	{ Kind = "Product", Key = "Boost",      Title = "2x Boost",   Desc = "Double income for 15 minutes." },
-	{ Kind = "Product", Key = "CashSmall",  Title = "Cash Pack",  Desc = "5 minutes of your income, instantly." },
-	{ Kind = "Product", Key = "CashBig",    Title = "Mega Cash",  Desc = "1 hour of your income, instantly." },
+	{ Kind = "Pass", Key = "DoubleCash", Title = "2x Cash", Desc = "Double all income and slaps. Permanent." },
+	{
+		Kind = "Pass",
+		Key = "AutoSlap",
+		Title = "Auto Slap",
+		Desc = "Slaps the ground for you every second. Permanent.",
+	},
+	{ Kind = "Product", Key = "Boost", Title = "2x Boost", Desc = "Double income for 15 minutes." },
+	{ Kind = "Product", Key = "CashSmall", Title = "Cash Pack", Desc = "5 minutes of your income, instantly." },
+	{ Kind = "Product", Key = "CashBig", Title = "Mega Cash", Desc = "1 hour of your income, instantly." },
 }
 
 return Config
